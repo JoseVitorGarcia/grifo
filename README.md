@@ -1,6 +1,6 @@
-# Analisador de Artigos em PDF
+# Grifo — leitura assistida de PDFs acadêmicos
 
-Aplicação web local que lê artigos científicos em PDF (**até 5 por sessão**), procura as
+Grifo é uma aplicação web local que lê artigos científicos em PDF (**até 5 por sessão**), procura as
 **keywords que você informa** e produz uma **leitura objetiva** de cada um — resumo
 estruturado, achados com evidência, limitações e lacunas — além de comparar os artigos
 entre si e devolver o **PDF grifado** nas passagens relevantes.

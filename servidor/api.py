@@ -60,7 +60,7 @@ WEB = RAIZ / "web"
 CONFIG = Config.do_ambiente()
 REPOSITORIO = Repositorio()
 
-app = FastAPI(title="Analisador de Artigos em PDF", version=__version__)
+app = FastAPI(title="Grifo — leitura assistida de PDFs academicos", version=__version__)
 
 
 # --------------------------------------------------------------------------

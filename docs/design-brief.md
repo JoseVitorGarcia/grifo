@@ -1,4 +1,4 @@
-# Briefing de design — Analisador de Artigos em PDF
+# Briefing de design — Grifo
 
 Documento de referência para gerar as telas da aplicação. Descreve o produto, cada tela,
 cada estado, os dados reais que aparecem em tela e os textos exatos usados hoje.
@@ -65,7 +65,7 @@ máquina do usuário. Isso deve ficar legível na interface, não escondido no r
 
 ## 4. Barra lateral (presente em todas as telas)
 
-**Topo:** título `📄 Analisador de Artigos`, legenda `v1.0.0 · 100% local via Ollama`.
+**Topo:** título `📄 Grifo`, legenda `v1.0.0 · 100% local via Ollama`.
 
 ### Bloco "Conexao"
 - Campo de texto **URL do Ollama** — valor `http://localhost:11434`, ajuda: `Container: docker compose up -d`

@@ -80,7 +80,7 @@ def test_status_reporta_ollama_fora(cliente):
 def test_pagina_inicial_entrega_o_front(cliente):
     resposta = cliente.get("/")
     assert resposta.status_code == 200
-    assert "Analisador de Artigos" in resposta.text
+    assert "Grifo" in resposta.text
     assert "/static/app.js" in resposta.text
 
 

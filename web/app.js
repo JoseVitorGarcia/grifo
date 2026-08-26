@@ -1,4 +1,4 @@
-/* Analisador de Artigos — front sem framework nem build.
+/* Grifo — front sem framework nem build.
    Conversa com a API em /api e desenha tudo com DOM puro. */
 
 'use strict';
