@@ -18,6 +18,27 @@ def documento_para_dict(documento) -> dict:
     }
 
 
+def resultado_para_dict(resultado, sintese: str = "") -> dict:
+    """Serializa um `ResultadoKeyword`. `sintese` fica vazia no scan puro."""
+    return {
+        "keyword": resultado.keyword,
+        "sintese": sintese,
+        "total": resultado.total,
+        "paginas": resultado.paginas,
+        "densidade_por_mil": resultado.densidade_por_mil,
+        "encontrada": resultado.encontrada,
+        "ocorrencias": [
+            {
+                "pagina": o.pagina,
+                "secao": o.secao,
+                "trecho": o.trecho,
+                "termo": o.termo_encontrado,
+            }
+            for o in resultado.ocorrencias
+        ],
+    }
+
+
 def analise_para_dict(analise: Analise | None) -> dict | None:
     if analise is None:
         return None
@@ -30,26 +51,7 @@ def analise_para_dict(analise: Analise | None) -> dict | None:
         "limitacoes": analise.limitacoes,
         "keywords_sugeridas": analise.keywords_sugeridas,
         "erros": analise.erros,
-        "keywords": [
-            {
-                "keyword": s.keyword,
-                "sintese": s.resumo,
-                "total": s.resultado.total,
-                "paginas": s.resultado.paginas,
-                "densidade_por_mil": s.resultado.densidade_por_mil,
-                "encontrada": s.resultado.encontrada,
-                "ocorrencias": [
-                    {
-                        "pagina": o.pagina,
-                        "secao": o.secao,
-                        "trecho": o.trecho,
-                        "termo": o.termo_encontrado,
-                    }
-                    for o in s.resultado.ocorrencias
-                ],
-            }
-            for s in analise.sinteses
-        ],
+        "keywords": [resultado_para_dict(s.resultado, s.resumo) for s in analise.sinteses],
     }
 
 

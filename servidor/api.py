@@ -48,7 +48,7 @@ from analisador.relatorio import (
     para_markdown,
     para_markdown_lote,
 )
-from servidor.esquemas import item_para_dict, lote_para_dict
+from servidor.esquemas import item_para_dict, lote_para_dict, resultado_para_dict
 from servidor.sessao import COOKIE, Repositorio
 
 from pathlib import Path
@@ -267,6 +267,28 @@ def pagina(requisicao: Request, identificador: str, numero: int) -> Response:
     if not 1 <= numero <= item.documento.n_paginas:
         return JSONResponse({"erro": "pagina fora do intervalo"}, status_code=404)
     return JSONResponse({"numero": numero, "texto": item.documento.paginas[numero - 1].texto})
+
+
+@app.get("/api/itens/{identificador}/scan")
+def scan(
+    requisicao: Request,
+    identificador: str,
+    keywords: str = "",
+    flexivel: bool = True,
+) -> Response:
+    """Busca literal das keywords, sem passar pelo modelo.
+
+    Scanning e deterministico e sai em milissegundos: esta rota existe para que
+    a tela nao precise esperar a leitura profunda — nem o Ollama estar no ar.
+    """
+    sessao = sessao_do(requisicao)
+    item = sessao.item(identificador)
+    if not item:
+        return JSONResponse({"erro": "artigo nao encontrado nesta sessao"}, status_code=404)
+
+    resultados = buscar_varias(item.documento, separar_keywords(keywords), flexivel=flexivel)
+    corpo = {"id": identificador, "keywords": [resultado_para_dict(r) for r in resultados]}
+    return com_cookie(JSONResponse(corpo), sessao)
 
 
 @app.get("/api/comparacao")
