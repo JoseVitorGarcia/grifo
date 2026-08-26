@@ -98,8 +98,13 @@ async function fluxoSSE(caminho, corpo, aoEvento) {
 
 async function verificarOllama() {
   const alvo = $('#estado-ollama');
+  const dot = $('#status-dot');
+  const textoTopo = $('#status-texto-topo');
   alvo.className = 'estado';
   alvo.textContent = 'verificando…';
+  dot.className = 'status-dot verificando';
+  textoTopo.classList.remove('skeleton');
+  textoTopo.textContent = 'verificando…';
   try {
     const dados = await api(`/api/status?url=${encodeURIComponent($('#url').value)}&modelo=${encodeURIComponent($('#modelo').value || '')}`);
     const seletor = $('#modelo');
@@ -109,9 +114,14 @@ async function verificarOllama() {
     seletor.value = dados.modelos.includes(escolhido) ? escolhido : dados.modelo;
     alvo.textContent = dados.mensagem;
     alvo.classList.add(dados.ok ? 'ok' : 'ruim');
+    dot.className = `status-dot ${dados.ok ? 'ok' : 'ruim'}`;
+    textoTopo.textContent = dados.ok ? `Ollama · ${seletor.value}` : 'Ollama indisponível';
   } catch (erro) {
-    alvo.textContent = `Falha ao consultar o servidor: ${erro.message}`;
+    const mensagem = `Falha ao consultar o servidor: ${erro.message}`;
+    alvo.textContent = mensagem;
     alvo.classList.add('ruim');
+    dot.className = 'status-dot ruim';
+    textoTopo.textContent = 'Ollama indisponível';
   }
 }
 
@@ -120,7 +130,8 @@ async function verificarOllama() {
 function desenharLote(vagas) {
   const total = estado.itens.length;
   $('#medidor-lote').style.width = `${(total / estado.limite) * 100}%`;
-  $('#contador-lote').textContent = `${total}/${estado.limite} PDFs nesta sessão`;
+  $('#contador-lote').textContent = `${total}/${estado.limite} PDFs`;
+  $('#topbar-lote').classList.toggle('oculto', total === 0);
   $('#vagas-texto').textContent = `${vagas ?? estado.limite - total} vaga(s) restante(s) · somente .pdf`;
   $('#btn-limpar').classList.toggle('oculto', total === 0);
   $('#area-keywords').classList.toggle('oculto', total === 0);
@@ -143,6 +154,7 @@ function desenharLote(vagas) {
   $('#btn-reanalisar').disabled = total === 0 || estado.analisando;
   $('#area-resultado').classList.toggle('oculto', total === 0);
   desenharSeletor();
+  if (total > 0) requestAnimationFrame(() => moverIndicadorAba($('.abas button.ativa')));
 }
 
 async function carregarLote() {
@@ -238,9 +250,15 @@ async function analisar(reanalisar) {
       if (alvo) {
         alvo.cartao.classList.add('ok');
         alvo.preenchida.style.width = '100%';
-        alvo.etapa.textContent = evento.erros?.length
-          ? `concluído com ${evento.erros.length} etapa(s) com erro`
-          : 'concluído';
+        if (evento.erros?.length) {
+          alvo.etapa.textContent = `concluído com ${evento.erros.length} etapa(s) com erro`;
+          alvo.etapa.setAttribute('data-tooltip', evento.erros.join('\n'));
+          alvo.etapa.tabIndex = 0;
+        } else {
+          alvo.etapa.textContent = 'concluído';
+          alvo.etapa.removeAttribute('data-tooltip');
+          alvo.etapa.removeAttribute('tabindex');
+        }
       }
       estado.comparacao = null;
       if (!estado.atual || estado.atual === evento.id) {
@@ -341,8 +359,10 @@ function desenharSkim(dado) {
     elemento('div', { class: 'metricas' }, [
       metrica('Páginas', numero(doc.paginas)),
       metrica('Palavras', numero(doc.palavras)),
-      metrica('Leitura', `${doc.minutos_de_leitura} min`),
-      metrica('Referências', meta.referencias_estimadas || '—'),
+      metrica('Leitura', `${doc.minutos_de_leitura} min`,
+        'Tempo estimado de leitura humana (200 palavras/min) — não tem relação com o tempo que o modelo leva para processar o artigo.'),
+      metrica('Referências', meta.referencias_estimadas || '—',
+        'Contagem estimada pelas entradas na seção de referências/bibliografia. Pode variar se o PDF não numerar as citações.'),
     ]),
   ];
 
@@ -357,7 +377,12 @@ function desenharSkim(dado) {
   }
   const sugeridas = dado.analise?.keywords_sugeridas || [];
   if (sugeridas.length) {
-    filhos.push(elemento('h3', { class: 'secao', texto: 'Termos-chave sugeridos pelo modelo' }));
+    filhos.push(elemento('h3', {
+      class: 'secao',
+      texto: 'Termos-chave sugeridos pelo modelo',
+      'data-tooltip': 'Termos que o modelo identificou como relevantes ao ler o artigo — não são as keywords que você digitou. Para buscá-los, copie e cole no campo de keywords.',
+      tabindex: '0',
+    }));
     filhos.push(elemento('div', { class: 'etiquetas' },
       sugeridas.map((k) => elemento('span', { class: 'etiqueta', texto: k }))));
   }
@@ -407,8 +432,12 @@ function desenharSkim(dado) {
   $('#painel-skim').replaceChildren(...filhos.filter(Boolean));
 }
 
-function metrica(rotulo, valor) {
-  return elemento('div', { class: 'metrica' }, [
+function metrica(rotulo, valor, tooltip) {
+  return elemento('div', {
+    class: 'metrica',
+    'data-tooltip': tooltip || null,
+    tabindex: tooltip ? '0' : null,
+  }, [
     elemento('span', { texto: rotulo }),
     elemento('b', { texto: String(valor) }),
   ]);
@@ -447,7 +476,12 @@ function desenharLeitura(dado) {
           elemento('b', { texto: `${indice + 1}. ${achado.afirmacao}` }),
           achado.pagina ? elemento('span', { class: 'pagina', texto: ` (p. ${achado.pagina})` }) : null,
         ]),
-        achado.evidencia ? elemento('p', { class: 'evidencia', texto: achado.evidencia }) : null,
+        achado.evidencia ? elemento('p', {
+          class: 'evidencia',
+          texto: achado.evidencia,
+          'data-tooltip': 'Trecho localizado por similaridade com a afirmação acima — não é necessariamente uma citação literal, diferente do destaque do Scan.',
+          tabindex: '0',
+        }) : null,
       ]));
     });
   }
@@ -487,7 +521,12 @@ function desenharScan(dado) {
       elemento('th', { texto: 'Keyword' }),
       elemento('th', { class: 'numero', texto: 'Ocorrências' }),
       elemento('th', { texto: 'Páginas' }),
-      elemento('th', { class: 'numero', texto: 'Por mil palavras' }),
+      elemento('th', {
+        class: 'numero tooltip-baixo',
+        texto: 'Por mil palavras',
+        'data-tooltip': 'Ocorrências normalizadas a cada 1000 palavras do artigo — permite comparar a frequência do termo entre artigos de tamanhos diferentes.',
+        tabindex: '0',
+      }),
     ])]),
     elemento('tbody', {}, keywords.map((k) => elemento('tr', {}, [
       elemento('td', { texto: k.keyword }),
@@ -530,7 +569,13 @@ function desenharScan(dado) {
     ].filter(Boolean));
 
     const topo = elemento('div', { class: 'keyword-topo', onclick: () => corpo.classList.toggle('oculto') }, [
-      elemento('span', { texto: k.encontrada ? '✅' : '⚠️' }),
+      elemento('span', {
+        texto: k.encontrada ? '✅' : '⚠️',
+        'data-tooltip': k.encontrada
+          ? 'Termo encontrado literalmente no texto extraído do artigo.'
+          : 'Termo não encontrado literalmente no texto — tente sinônimos ou variações.',
+        tabindex: '0',
+      }),
       elemento('h4', { texto: k.keyword }),
       elemento('span', { class: 'contagem', texto: `${k.total} ocorrência(s) · ${k.paginas.length} página(s)` }),
     ]);
@@ -696,10 +741,21 @@ function ligarEventos() {
   solta.addEventListener('drop', (e) => enviarArquivos(e.dataTransfer.files));
 
   let agendado = null;
-  $('#keywords').addEventListener('input', (e) => {
+  const campoKeywords = $('#keywords');
+
+  const removerKeyword = (termoRemovido) => {
+    const termos = campoKeywords.value.split(/[,;\n]+/).map((t) => t.trim()).filter(Boolean);
+    campoKeywords.value = termos.filter((t) => t !== termoRemovido).join(', ');
+    campoKeywords.dispatchEvent(new Event('input'));
+  };
+
+  campoKeywords.addEventListener('input', (e) => {
     const termos = e.target.value.split(/[,;\n]+/).map((t) => t.trim()).filter(Boolean);
     $('#etiquetas-keywords').replaceChildren(...termos.map((t) =>
-      elemento('span', { class: 'etiqueta', texto: t })));
+      elemento('span', { class: 'etiqueta' }, [
+        t,
+        elemento('button', { type: 'button', title: `Remover "${t}"`, texto: '×', onclick: () => removerKeyword(t) }),
+      ])));
     clearTimeout(agendado);
     agendado = setTimeout(async () => {
       if (!estado.atual) return;
@@ -723,12 +779,52 @@ function ligarEventos() {
     $$('.abas button').forEach((b) => b.classList.toggle('ativa', b === botao));
     $$('.painel').forEach((p) => p.classList.toggle('ativa', p.id === `painel-${botao.dataset.aba}`));
     if (botao.dataset.aba === 'comparar') { estado.comparacao = null; desenharComparacao(); }
+    moverIndicadorAba(botao);
   }));
+  window.addEventListener('resize', () => moverIndicadorAba($('.abas button.ativa')));
+
+  const preencherRange = (input) => {
+    const percentual = ((Number(input.value) - Number(input.min)) / (Number(input.max) - Number(input.min))) * 100;
+    input.style.background = `linear-gradient(to right, var(--primaria-acao) ${percentual}%, var(--superficie-3) ${percentual}%)`;
+  };
+  $$('input[type=range]').forEach((input) => {
+    preencherRange(input);
+    input.addEventListener('input', () => preencherRange(input));
+  });
 
   $('#temperatura').addEventListener('input', (e) => { $('#saida-temperatura').value = e.target.value; });
   $('#num-ctx').addEventListener('input', (e) => { $('#saida-ctx').value = OPCOES_CTX[Number(e.target.value)]; });
   $('#tamanho-bloco').addEventListener('input', (e) => { $('#saida-bloco').value = e.target.value; });
   $('#max-blocos').addEventListener('input', (e) => { $('#saida-blocos').value = e.target.value; });
+
+  // ---- drawer de configuracoes ----
+  const drawer = $('#drawer');
+  const fundo = $('#drawer-fundo');
+  const abrirDrawer = () => {
+    drawer.classList.add('aberto');
+    drawer.setAttribute('aria-hidden', 'false');
+    fundo.classList.remove('oculto');
+    requestAnimationFrame(() => fundo.classList.add('visivel'));
+  };
+  const fecharDrawer = () => {
+    drawer.classList.remove('aberto');
+    drawer.setAttribute('aria-hidden', 'true');
+    fundo.classList.remove('visivel');
+    setTimeout(() => fundo.classList.add('oculto'), 220);
+  };
+  $('#btn-config').addEventListener('click', abrirDrawer);
+  $('#btn-status').addEventListener('click', abrirDrawer);
+  $('#btn-fechar-drawer').addEventListener('click', fecharDrawer);
+  fundo.addEventListener('click', fecharDrawer);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharDrawer(); });
+}
+
+/** Alinha o indicador deslizante da aba ativa; roda so quando a barra de abas esta visivel. */
+function moverIndicadorAba(botao) {
+  const indicador = $('#abas-indicador');
+  if (!botao || !indicador || botao.offsetParent === null) return;
+  indicador.style.width = `${botao.offsetWidth}px`;
+  indicador.style.transform = `translateX(${botao.offsetLeft}px)`;
 }
 
 async function iniciar() {
@@ -736,7 +832,8 @@ async function iniciar() {
   try {
     const config = await api('/api/config');
     estado.limite = config.limite_pdfs;
-    $('#versao').textContent = `v${config.versao} · 100% local via Ollama`;
+    $('#versao').textContent = `v${config.versao} · 100% local`;
+    $('#versao').classList.remove('skeleton');
     $('#url').value = config.padroes.ollama_url;
     $('#temperatura').value = config.padroes.temperatura;
     $('#saida-temperatura').value = config.padroes.temperatura;

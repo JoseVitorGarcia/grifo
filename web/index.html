@@ -4,21 +4,56 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Grifo — leitura assistida de PDFs acadêmicos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/estilo.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+<link rel="icon" href="/static/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 </head>
 <body>
-<div class="app">
+<header class="topbar">
+  <div class="topbar-marca">
+    <picture>
+      <source srcset="/static/logo-dark.png" media="(prefers-color-scheme: dark)">
+      <img class="marca-icone" src="/static/logo.png" alt="" width="33" height="40">
+    </picture>
+    <div>
+      <h1>Grifo</h1>
+      <p class="versao skeleton" id="versao">carregando…</p>
+    </div>
+  </div>
 
-  <aside class="barra">
-    <header class="marca">
-      <span class="marca-icone">📄</span>
-      <div>
-        <h1>Grifo</h1>
-        <p class="versao" id="versao">carregando…</p>
-      </div>
-    </header>
+  <div class="topbar-lote oculto" id="topbar-lote">
+    <div class="medidor"><div class="medidor-barra" id="medidor-lote"></div></div>
+    <span class="sutil" id="contador-lote">0/5 PDFs</span>
+  </div>
 
+  <div class="topbar-acoes">
+    <button class="pill-status" id="btn-status" type="button" title="Abrir configurações">
+      <span class="status-dot verificando" id="status-dot"></span>
+      <span class="skeleton" id="status-texto-topo">verificando…</span>
+    </button>
+    <button class="btn-config" id="btn-config" type="button" title="Configurações" aria-label="Abrir configurações">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<div class="drawer-fundo oculto" id="drawer-fundo"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer-cabecalho">
+    <h2>Configurações</h2>
+    <button class="drawer-fechar" id="btn-fechar-drawer" type="button" aria-label="Fechar configurações">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="drawer-corpo">
     <section class="grupo">
       <h2>Conexão</h2>
       <label for="url">URL do Ollama</label>
@@ -30,22 +65,14 @@
     </section>
 
     <section class="grupo">
-      <h2>Lote</h2>
-      <div class="medidor"><div class="medidor-barra" id="medidor-lote"></div></div>
-      <p class="sutil" id="contador-lote">0/5 PDFs nesta sessão</p>
-      <ul class="lista-arquivos" id="lista-arquivos"></ul>
-      <button class="secundario largo oculto" id="btn-limpar">Limpar lote</button>
-    </section>
-
-    <section class="grupo">
       <h2>Análise</h2>
-      <label class="caixa"><input type="checkbox" data-etapa="resumo" checked> Resumo estruturado</label>
-      <label class="caixa"><input type="checkbox" data-etapa="achados" checked> Achados + evidências</label>
-      <label class="caixa"><input type="checkbox" data-etapa="limitacoes" checked> Limitações e lacunas</label>
-      <label class="caixa"><input type="checkbox" data-etapa="sinteses" checked> Síntese por keyword</label>
-      <label class="caixa"><input type="checkbox" data-etapa="sugeridas" checked> Sugerir termos-chave</label>
-      <label class="caixa" title="Casa também plural e flexões simples: algoritmo → algoritmos">
-        <input type="checkbox" id="flexivel" checked> Busca flexível
+      <label class="toggle-linha"><input type="checkbox" data-etapa="resumo" checked><span class="toggle-trilho"><span class="toggle-bola"></span></span>Resumo estruturado</label>
+      <label class="toggle-linha"><input type="checkbox" data-etapa="achados" checked><span class="toggle-trilho"><span class="toggle-bola"></span></span>Achados + evidências</label>
+      <label class="toggle-linha"><input type="checkbox" data-etapa="limitacoes" checked><span class="toggle-trilho"><span class="toggle-bola"></span></span>Limitações e lacunas</label>
+      <label class="toggle-linha"><input type="checkbox" data-etapa="sinteses" checked><span class="toggle-trilho"><span class="toggle-bola"></span></span>Síntese por keyword</label>
+      <label class="toggle-linha"><input type="checkbox" data-etapa="sugeridas" checked><span class="toggle-trilho"><span class="toggle-bola"></span></span>Sugerir termos-chave</label>
+      <label class="toggle-linha" title="Casa também plural e flexões simples: algoritmo → algoritmos">
+        <input type="checkbox" id="flexivel" checked><span class="toggle-trilho"><span class="toggle-bola"></span></span>Busca flexível
       </label>
     </section>
 
@@ -60,8 +87,10 @@
       <label for="max-blocos">Máx. de blocos lidos <output id="saida-blocos">24</output></label>
       <input id="max-blocos" type="range" min="4" max="60" step="1" value="24">
     </details>
-  </aside>
+  </div>
+</aside>
 
+<div class="app">
   <main class="conteudo">
     <header class="cabecalho">
       <h2>Análise objetiva de artigos em PDF</h2>
@@ -77,6 +106,8 @@
         <input type="file" id="arquivo" accept="application/pdf" multiple hidden>
       </div>
       <ul class="avisos" id="avisos-envio"></ul>
+      <ul class="lista-arquivos" id="lista-arquivos"></ul>
+      <button class="secundario oculto" id="btn-limpar">Limpar lote</button>
     </section>
 
     <section class="cartao oculto" id="area-keywords">
@@ -102,6 +133,7 @@
         <button role="tab" data-aba="comparar">Comparar lote</button>
         <button role="tab" data-aba="texto">Texto extraído</button>
         <button role="tab" data-aba="exportar">Exportar</button>
+        <span class="abas-indicador" id="abas-indicador"></span>
       </div>
 
       <p class="nota-metodo" id="nota-metodo">
