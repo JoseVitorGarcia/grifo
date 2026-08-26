@@ -24,6 +24,30 @@ def test_infere_titulo_quando_metadado_falta():
     assert doc.metadados["titulo"].startswith("Aprendizado de maquina")
 
 
+def test_prioriza_autores_do_texto_sobre_metadado_do_pdf():
+    # O /Author do PDF costuma vir de um template do Word reaproveitado (nome de
+    # quem editou por ultimo), nao de quem escreveu o artigo — por isso o texto
+    # visivel na pagina 1 deve vencer o metadado quando os dois discordam.
+    paginas = [[
+        "TITULO DO ARTIGO EM CAIXA ALTA",
+        "",
+        "Arthur Marques de Oliveira 1",
+        "Jordana Kunsler Zatti 2",
+        "RESUMO",
+        "Este artigo investiga algo relevante para a area.",
+    ]]
+    pdf = montar_pdf(paginas, autores="Juliany Ferreira")
+    doc = extrair_documento(pdf)
+    assert doc.metadados["autores"] == "Arthur Marques de Oliveira; Jordana Kunsler Zatti"
+    assert "Juliany Ferreira" not in doc.metadados["autores"]
+
+
+def test_cai_para_metadado_quando_texto_nao_tem_bloco_de_autoria():
+    pdf = montar_pdf([["conteudo"]], titulo="Um Titulo", autores="Fulana e Beltrano")
+    doc = extrair_documento(pdf)
+    assert doc.metadados["autores"] == "Fulana e Beltrano"
+
+
 def test_detecta_secoes_e_recupera_trecho():
     pdf = montar_pdf(
         [
