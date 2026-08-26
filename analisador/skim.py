@@ -35,6 +35,15 @@ MARCADORES_CONCLUSAO: tuple[str, ...] = (
     "portanto",
     "em suma",
     "por fim",
+    "os resultados sugerem",
+    "os achados indicam",
+    "sugerem que",
+    "indicam que",
+    "mostram que",
+    "our findings",
+    "we found",
+    "suggest that",
+    "indicate that",
     "we conclude",
     "in conclusion",
     "the results show",
@@ -42,6 +51,17 @@ MARCADORES_CONCLUSAO: tuple[str, ...] = (
     "taken together",
     "therefore",
     "in summary",
+)
+
+# Titulos de secao cujo conteudo e conclusivo por definicao, ja normalizados.
+# Sem isso, uma conclusao escrita sem marcador ("O tratamento aumentou a
+# adesao...") passaria batido — e foi o que aconteceu com o artigo de exemplo.
+SECOES_CONCLUSIVAS: tuple[str, ...] = (
+    "conclusao",
+    "conclusoes",
+    "conclusion",
+    "conclusions",
+    "consideracoes finais",
 )
 
 # Corta depois de . ! ? seguidos de espaco e de um inicio de frase plausivel.
@@ -154,10 +174,13 @@ def resumir(documento, *, max_numeros: int = 12, max_conclusoes: int = 8) -> Ski
             if len(frases) > 1:
                 atual.esqueleto.append(frases[-1])
 
+        # Numa secao de conclusao toda frase conta; fora dela, so as marcadas.
+        secao_conclusiva = normalizar(atual.titulo) in SECOES_CONCLUSIVAS
+
         for frase in frases:
             if len(skim.numeros) < max_numeros and tem_numero(frase):
                 skim.numeros.append(Frase(texto=frase, pagina=pagina, secao=atual.titulo))
-            if len(skim.conclusoes) < max_conclusoes and e_conclusiva(frase):
+            if len(skim.conclusoes) < max_conclusoes and (secao_conclusiva or e_conclusiva(frase)):
                 skim.conclusoes.append(Frase(texto=frase, pagina=pagina, secao=atual.titulo))
 
     return skim

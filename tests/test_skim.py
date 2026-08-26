@@ -196,3 +196,53 @@ def test_texto_antes_da_primeira_secao_nao_e_perdido():
 def test_documento_vazio_devolve_skim_vazio():
     skim = resumir(converter(documento_de([""])))
     assert skim.vazio is True
+
+
+def test_frase_de_conclusao_sem_marcador_conta_dentro_da_secao_conclusion():
+    # Regressao real: o PDF de exemplo do projeto devolvia conclusoes: 0 porque
+    # a frase da Conclusion nao usa nenhum marcador linguistico.
+    documento = documento_de([
+        "\n".join([
+            "Conclusion",
+            "O acompanhamento por telemedicina aumentou a adesao ao tratamento.",
+            "",
+            "Estudos multicentricos sao necessarios para confirmar o efeito.",
+        ]),
+    ])
+    skim = resumir(converter(documento))
+    textos = [f.texto for f in skim.conclusoes]
+    assert any("aumentou a adesao" in t for t in textos)
+
+
+def test_secao_comum_nao_vira_conclusao_inteira():
+    documento = documento_de([
+        "\n".join([
+            "Methods",
+            "A alocacao foi feita por sorteio central.",
+            "",
+            "Os pacientes foram acompanhados por doze meses.",
+        ]),
+    ])
+    skim = resumir(converter(documento))
+    assert skim.conclusoes == []
+
+
+def test_marcador_novo_captura_resultados_sugerem():
+    assert e_conclusiva("Os resultados sugerem que o acompanhamento melhora a adesao.") is True
+
+
+def test_marcador_novo_em_ingles():
+    assert e_conclusiva("Our findings indicate that adherence improved.") is True
+
+
+def test_pdf_de_exemplo_do_projeto_rende_conclusoes():
+    # O caso que motivou esta correcao: rodar contra exemplos/artigo_exemplo.pdf
+    # devolvia conclusoes: 0.
+    from pathlib import Path
+
+    from analisador.pdf import extrair_documento
+
+    caminho = Path(__file__).resolve().parents[1] / "exemplos" / "artigo_exemplo.pdf"
+    skim = resumir(converter(extrair_documento(caminho.read_bytes())))
+    assert skim.conclusoes, "o artigo de exemplo tem secao Conclusion e deve render conclusoes"
+    assert all(f.pagina >= 1 for f in skim.conclusoes)
