@@ -68,6 +68,14 @@ def test_nao_quebra_frase_em_numero_decimal():
     assert len(frases) == 1
 
 
+def test_corta_frase_antes_de_aspas_curvas():
+    # A classe do lookahead inclui a aspas curva; sem ela, falas citadas em
+    # artigos com tipografia real deixariam de abrir frase nova.
+    frases = separar_frases('Ele concluiu o argumento. “Vamos adiante”, escreveu.')
+    assert len(frases) == 2
+    assert frases[1].startswith('“Vamos adiante')
+
+
 def test_frase_unica_sem_ponto_final_e_preservada():
     assert separar_frases("Methods") == ["Methods"]
 

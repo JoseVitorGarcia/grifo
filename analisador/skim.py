@@ -45,8 +45,9 @@ MARCADORES_CONCLUSAO: tuple[str, ...] = (
 )
 
 # Corta depois de . ! ? seguidos de espaco e de um inicio de frase plausivel.
-# O lookahead exige maiuscula ou digito, o que preserva "0.001)" e "p. 3".
-_RE_CORTE_FRASE = re.compile(r'(?<=[.!?])\s+(?=["\'(\[]?[A-ZÀ-Ú])')
+# O lookahead exige maiuscula (acompanhada opcionalmente de aspas retas/curvas ou
+# parentese/colchete), o que preserva "0.001)" e "p. 3".
+_RE_CORTE_FRASE = re.compile(r"(?<=[.!?])\s+(?=[\"“'(\[]?[A-ZÀ-Ú])")
 
 # Dado de verdade: decimal, percentual ou inteiro de 2+ digitos.
 # Deixa de fora "p. 3", que e referencia de pagina e nao achado.
