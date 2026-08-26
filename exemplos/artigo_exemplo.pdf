@@ -1,0 +1,158 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Length 826 >>
+stream
+BT
+/F1 12 Tf
+14 TL
+50 780 Td
+(EXEMPLO FICTICIO - GERADO PARA TESTAR O ANALISADOR) Tj
+T*
+(Telemedicina e adesao ao tratamento em pacientes cronicos) Tj
+T*
+(Autoria de exemplo - dados inventados, nao citar) Tj
+T*
+() Tj
+T*
+(Abstract) Tj
+T*
+(Este estudo ficticio avalia o efeito do acompanhamento por telemedicina) Tj
+T*
+(na adesao ao tratamento de pacientes com doencas cronicas. Trata-se de um) Tj
+T*
+(ensaio clinico randomizado com 240 participantes acompanhados por 12 meses.) Tj
+T*
+() Tj
+T*
+(Introduction) Tj
+T*
+(A baixa adesao ao tratamento e um problema persistente no cuidado de) Tj
+T*
+(condicoes cronicas, com estimativas de abandono entre 30% e 50%.) Tj
+T*
+(A telemedicina surge como alternativa de baixo custo para acompanhamento) Tj
+T*
+(frequente, mas a evidencia sobre seu efeito na adesao ainda e limitada.) Tj
+T*
+ET
+endstream
+endobj
+3 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 2 0 R >>
+endobj
+4 0 obj
+<< /Length 932 >>
+stream
+BT
+/F1 12 Tf
+14 TL
+50 780 Td
+(Methods) Tj
+T*
+(Ensaio clinico randomizado, aberto, conduzido em um unico hospital) Tj
+T*
+(universitario entre marco de 2023 e marco de 2024. Foram randomizados) Tj
+T*
+(240 pacientes em dois grupos: acompanhamento por telemedicina quinzenal) Tj
+T*
+(\(n=120\) e acompanhamento presencial padrao \(n=120\).) Tj
+T*
+(O desfecho primario foi a taxa de adesao medida por contagem de comprimidos.) Tj
+T*
+(A analise usou regressao logistica multivariada, com ajuste para idade,) Tj
+T*
+(escolaridade e numero de comorbidades. O nivel de significancia foi 5%.) Tj
+T*
+() Tj
+T*
+(Results) Tj
+T*
+(A adesao media foi de 78% no grupo telemedicina e 60% no grupo controle,) Tj
+T*
+(uma diferenca de 18 pontos percentuais \(IC 95%: 11 a 25; p < 0,001\).) Tj
+T*
+(O efeito se manteve apos ajuste \(OR 2,3; IC 95%: 1,5 a 3,6\).) Tj
+T*
+(A taxa de abandono do estudo foi de 7% no grupo telemedicina e 9% no controle.) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 4 0 R >>
+endobj
+6 0 obj
+<< /Length 988 >>
+stream
+BT
+/F1 12 Tf
+14 TL
+50 780 Td
+(Discussion) Tj
+T*
+(Os resultados sugerem que o acompanhamento remoto frequente melhora a adesao) Tj
+T*
+(ao tratamento. O achado e consistente com estudos observacionais anteriores.) Tj
+T*
+(Entre as limitacoes, o estudo foi conduzido em um unico centro, o que restringe) Tj
+T*
+(a generalizacao, e o desenho aberto pode ter introduzido vies de aferricao.) Tj
+T*
+(A medida de adesao por contagem de comprimidos tambem superestima o uso real.) Tj
+T*
+(Nao foi avaliado o custo-efetividade da intervencao.) Tj
+T*
+() Tj
+T*
+(Conclusion) Tj
+T*
+(O acompanhamento por telemedicina aumentou a adesao ao tratamento em pacientes) Tj
+T*
+(cronicos. Estudos multicentricos sao necessarios para confirmar o efeito.) Tj
+T*
+() Tj
+T*
+(References) Tj
+T*
+([1] Exemplo A. Adesao ao tratamento cronico. Revista Ficticia, 2021.) Tj
+T*
+([2] Exemplo B. Telemedicina no SUS. Revista Ficticia, 2019.) Tj
+T*
+([3] Exemplo C. Metodos de aferricao de adesao. Revista Ficticia, 2020.) Tj
+T*
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R] /Count 3 >>
+endobj
+9 0 obj
+<< /Type /Catalog /Pages 8 0 R >>
+endobj
+10 0 obj
+<< /Title (Telemedicina e adesao ao tratamento \(exemplo ficticio\)) /Author (Autoria de Exemplo) >>
+endobj
+xref
+0 11
+0000000000 65535 f 
+0000000009 00000 n 
+0000000079 00000 n 
+0000000956 00000 n 
+0000001082 00000 n 
+0000002065 00000 n 
+0000002191 00000 n 
+0000003230 00000 n 
+0000003356 00000 n 
+0000003425 00000 n 
+0000003474 00000 n 
+trailer
+<< /Size 11 /Root 9 0 R /Info 10 0 R >>
+startxref
+3591
+%%EOF

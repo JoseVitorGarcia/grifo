@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analisador de Artigos em PDF</title>
+<link rel="stylesheet" href="/static/estilo.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+</head>
+<body>
+<div class="app">
+
+  <aside class="barra">
+    <header class="marca">
+      <span class="marca-icone">📄</span>
+      <div>
+        <h1>Analisador de Artigos</h1>
+        <p class="versao" id="versao">carregando…</p>
+      </div>
+    </header>
+
+    <section class="grupo">
+      <h2>Conexão</h2>
+      <label for="url">URL do Ollama</label>
+      <input id="url" type="text" spellcheck="false">
+      <label for="modelo">Modelo</label>
+      <select id="modelo"></select>
+      <p class="estado" id="estado-ollama">verificando…</p>
+      <button class="secundario largo" id="btn-reconsultar">Reconsultar modelos</button>
+    </section>
+
+    <section class="grupo">
+      <h2>Lote</h2>
+      <div class="medidor"><div class="medidor-barra" id="medidor-lote"></div></div>
+      <p class="sutil" id="contador-lote">0/5 PDFs nesta sessão</p>
+      <ul class="lista-arquivos" id="lista-arquivos"></ul>
+      <button class="secundario largo oculto" id="btn-limpar">Limpar lote</button>
+    </section>
+
+    <section class="grupo">
+      <h2>Análise</h2>
+      <label class="caixa"><input type="checkbox" data-etapa="resumo" checked> Resumo estruturado</label>
+      <label class="caixa"><input type="checkbox" data-etapa="achados" checked> Achados + evidências</label>
+      <label class="caixa"><input type="checkbox" data-etapa="limitacoes" checked> Limitações e lacunas</label>
+      <label class="caixa"><input type="checkbox" data-etapa="sinteses" checked> Síntese por keyword</label>
+      <label class="caixa"><input type="checkbox" data-etapa="sugeridas" checked> Sugerir termos-chave</label>
+      <label class="caixa" title="Casa também plural e flexões simples: algoritmo → algoritmos">
+        <input type="checkbox" id="flexivel" checked> Busca flexível
+      </label>
+    </section>
+
+    <details class="grupo">
+      <summary>Ajustes do modelo</summary>
+      <label for="temperatura">Temperatura <output id="saida-temperatura">0.2</output></label>
+      <input id="temperatura" type="range" min="0" max="1" step="0.05" value="0.2">
+      <label for="num-ctx">Janela de contexto <output id="saida-ctx">8192</output></label>
+      <input id="num-ctx" type="range" min="0" max="4" step="1" value="2">
+      <label for="tamanho-bloco">Tamanho do bloco <output id="saida-bloco">6000</output></label>
+      <input id="tamanho-bloco" type="range" min="2000" max="12000" step="500" value="6000">
+      <label for="max-blocos">Máx. de blocos lidos <output id="saida-blocos">24</output></label>
+      <input id="max-blocos" type="range" min="4" max="60" step="1" value="24">
+    </details>
+  </aside>
+
+  <main class="conteudo">
+    <header class="cabecalho">
+      <h2>Análise objetiva de artigos em PDF</h2>
+      <p>Envie até <b id="limite-texto">5</b> artigos por sessão, informe as keywords e receba
+         leitura objetiva com trechos rastreáveis e comparação entre os artigos.</p>
+    </header>
+
+    <section class="cartao" id="area-envio">
+      <div class="solta" id="solta" tabindex="0" role="button" aria-label="Enviar PDFs">
+        <span class="solta-icone">⬆️</span>
+        <p><b>Arraste os PDFs aqui</b> ou clique para escolher</p>
+        <p class="sutil" id="vagas-texto">5 vagas restantes · somente .pdf</p>
+        <input type="file" id="arquivo" accept="application/pdf" multiple hidden>
+      </div>
+      <ul class="avisos" id="avisos-envio"></ul>
+    </section>
+
+    <section class="cartao oculto" id="area-keywords">
+      <label for="keywords">Keywords — valem para todos os artigos do lote</label>
+      <textarea id="keywords" rows="3"
+        placeholder="viés amostral, aprendizado de máquina, validação cruzada"></textarea>
+      <div class="etiquetas" id="etiquetas-keywords"></div>
+      <div class="acoes">
+        <button class="primario" id="btn-analisar">Analisar pendentes</button>
+        <button class="secundario" id="btn-reanalisar">Reanalisar tudo</button>
+      </div>
+    </section>
+
+    <section class="oculto" id="area-fila"></section>
+
+    <section class="oculto" id="area-resultado">
+      <nav class="seletor" id="seletor-artigos"></nav>
+
+      <div class="abas" role="tablist" id="abas">
+        <button role="tab" data-aba="visao" class="ativa">Visão geral</button>
+        <button role="tab" data-aba="leitura">Leitura</button>
+        <button role="tab" data-aba="keywords">Keywords</button>
+        <button role="tab" data-aba="comparar">Comparar lote</button>
+        <button role="tab" data-aba="texto">Texto extraído</button>
+        <button role="tab" data-aba="exportar">Exportar</button>
+      </div>
+
+      <div class="painel ativa" id="painel-visao"></div>
+      <div class="painel" id="painel-leitura"></div>
+      <div class="painel" id="painel-keywords"></div>
+      <div class="painel" id="painel-comparar"></div>
+      <div class="painel" id="painel-texto"></div>
+      <div class="painel" id="painel-exportar"></div>
+    </section>
+  </main>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+# `docker compose up -d` sobe a aplicacao inteira: Ollama, download do modelo e a app.
+# Para desenvolver com recarga automatica, suba so o Ollama e rode a app no venv:
+#   docker compose up -d ollama && ./iniciar.sh --reload
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: analisador-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+    environment:
+      # Mantem o modelo carregado em memoria entre requisicoes (evita recarregar a cada chamada)
+      OLLAMA_KEEP_ALIVE: "30m"
+      OLLAMA_NUM_PARALLEL: "1"
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    # Descomente o bloco abaixo se voce tiver GPU NVIDIA + nvidia-container-toolkit.
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # Baixa o modelo e encerra. Idempotente: se ja estiver no volume, sai em segundos.
+  preparar-modelo:
+    image: ollama/ollama:latest
+    container_name: analisador-preparar-modelo
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      # Faz o CLI falar com o servidor do outro container em vez de subir o proprio.
+      OLLAMA_HOST: "http://ollama:11434"
+    entrypoint: ["/bin/sh", "-c"]
+    command: ['ollama pull "${OLLAMA_MODELO:-gemma3:4b}"']
+    restart: "no"
+
+  app:
+    build: .
+    image: analisador-pdf:latest
+    container_name: analisador-app
+    ports:
+      - "${PORTA:-8000}:8000"
+    environment:
+      # Dentro da rede do compose o Ollama atende pelo nome do servico.
+      OLLAMA_URL: "http://ollama:11434"
+      OLLAMA_MODELO: "${OLLAMA_MODELO:-gemma3:4b}"
+      OLLAMA_NUM_CTX: "${OLLAMA_NUM_CTX:-8192}"
+      OLLAMA_TEMPERATURA: "${OLLAMA_TEMPERATURA:-0.2}"
+      OLLAMA_TIMEOUT: "${OLLAMA_TIMEOUT:-600}"
+      ANALISADOR_TAMANHO_BLOCO: "${ANALISADOR_TAMANHO_BLOCO:-6000}"
+      ANALISADOR_MAX_BLOCOS: "${ANALISADOR_MAX_BLOCOS:-24}"
+    depends_on:
+      ollama:
+        condition: service_healthy
+      preparar-modelo:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  ollama-models:
