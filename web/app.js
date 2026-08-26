@@ -136,7 +136,9 @@ function desenharLote(vagas) {
     ])));
 
   const pendentes = estado.itens.filter((i) => !i.analisado).length;
-  $('#btn-analisar').textContent = pendentes ? `Analisar ${pendentes} pendente(s)` : 'Nada pendente';
+  $('#btn-analisar').textContent = pendentes
+    ? `Leitura profunda — ${pendentes} pendente(s)`
+    : 'Nada pendente';
   $('#btn-analisar').disabled = pendentes === 0 || estado.analisando;
   $('#btn-reanalisar').disabled = total === 0 || estado.analisando;
   $('#area-resultado').classList.toggle('oculto', total === 0);
