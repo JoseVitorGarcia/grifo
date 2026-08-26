@@ -190,8 +190,10 @@ contra um servidor Ollama falso (`tests/ollama_falso.py`).
 
 ## Próximos passos
 
-Ideias levantadas e ainda não implementadas — incluindo enquadrar o produto nas técnicas de
-**skimming e scanning** e retirar a pergunta livre ao modelo — estão em
+O produto foi enquadrado nas técnicas de **skimming e scanning** (três camadas: Skim sem
+modelo, Scan determinístico, Leitura profunda com LLM), a pergunta livre ao modelo foi
+retirada, e o foco é hoje leitura objetiva com rastreabilidade. Ideias ainda em aberto —
+como precisão de página nos achados — estão em
 [`docs/proximos-passos.md`](docs/proximos-passos.md).
 
 ## Limitações conhecidas

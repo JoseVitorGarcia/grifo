@@ -57,7 +57,7 @@ máquina do usuário. Isso deve ficar legível na interface, não escondido no r
 │              ├────────────────────────────────────────────────────────┤
 │              │  Seletor de artigo em exibição (aparece com 2+)        │
 │              ├────────────────────────────────────────────────────────┤
-│              │  9 abas de resultado                                   │
+│              │  6 abas de resultado                                   │
 └──────────────┴────────────────────────────────────────────────────────┘
 ```
 
@@ -168,7 +168,7 @@ foi retirada — o produto é leitura objetiva, não conversa.)
 - Avisos da extração, quando houver (ex.: *Quase nenhum texto foi extraido. O PDF
   provavelmente e digitalizado (imagem) e precisaria de OCR para ser analisado.*)
 
-#### 4.2 Leitura — resumo, achados e limitações numa leitura contínua
+#### 4.2 Leitura profunda — resumo, achados e limitações numa leitura contínua
 
 **Resumo** — cinco campos rotulados, no máximo 3 frases cada
 `Objetivo` · `Metodologia` · `Resultados` · `Conclusao` · `Relevancia`
@@ -306,8 +306,9 @@ Problemas conhecidos da interface atual, em ordem de impacto:
 5. **Nada indica quanto tempo falta.** Com tempo por bloco conhecido, dá para estimar.
 6. **O PDF grifado só existe como botão de download.** Um visualizador embutido, mostrando
    as marcações na hora, seria bem mais forte — e o backend já devolve o PDF anotado.
-7. **Sete abas ainda podem virar menos.** Texto extraído é ferramenta de conferência, não
-   conteúdo de leitura.
+7. **Potencial de poda nas abas.** Texto extraído é ferramenta de conferência e debugging,
+   não conteúdo de leitura — poderia ser acessível por outro caminho (ex.: modal) para
+   desafogar a navegação.
 
 ---
 
