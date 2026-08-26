@@ -9,6 +9,7 @@ const estado = {
   limite: 5,
   itens: [],          // {id, nome, titulo, analisado, documento}
   detalhes: {},       // id -> objeto completo com analise
+  scan: {},           // id -> {keywords: [...]} vindo de /scan, sem LLM
   atual: null,
   comparacao: null,
   analisando: false,
@@ -286,8 +287,22 @@ async function abrirArtigo(id) {
   if (!estado.detalhes[id]) {
     try { estado.detalhes[id] = await api(`/api/itens/${id}`); } catch (_) { return; }
   }
+  await carregarScan(id);
   desenharSeletor();
   desenharArtigo();
+}
+
+/** Varre o artigo pelas keywords atuais. Nao usa o modelo: pode rodar sempre. */
+async function carregarScan(id) {
+  const termos = $('#keywords').value.trim();
+  const flexivel = $('#flexivel').checked;
+  try {
+    estado.scan[id] = await api(
+      `/api/itens/${id}/scan?keywords=${encodeURIComponent(termos)}&flexivel=${flexivel}`,
+    );
+  } catch (_) {
+    delete estado.scan[id];  // sem scan a tela cai para o que a analise tiver
+  }
 }
 
 function artigoAtual() {
@@ -299,7 +314,7 @@ function desenharArtigo() {
   if (!dado) return;
   desenharVisao(dado);
   desenharLeitura(dado);
-  desenharKeywords(dado);
+  desenharScan(dado);
   desenharTexto(dado);
   desenharExportar(dado);
   desenharComparacao();
@@ -400,11 +415,20 @@ function desenharLeitura(dado) {
   alvo.replaceChildren(...(filhos.length ? filhos : [elemento('p', { class: 'sutil', texto: 'Nada gerado nesta execução.' })]));
 }
 
-function desenharKeywords(dado) {
-  const alvo = $('#painel-keywords');
-  const keywords = dado.analise?.keywords || [];
+function desenharScan(dado) {
+  const alvo = $('#painel-scan');
+  // O scan deterministico chega em milissegundos; a sintese do modelo, minutos
+  // depois. Casamos os dois por keyword para nao esperar um pelo outro.
+  const sinteses = {};
+  (dado.analise?.keywords || []).forEach((k) => { sinteses[k.keyword] = k.sintese; });
+  const keywords = (estado.scan[dado.id]?.keywords || dado.analise?.keywords || [])
+    .map((k) => ({ ...k, sintese: sinteses[k.keyword] || k.sintese || '' }));
+
   if (!keywords.length) {
-    alvo.replaceChildren(elemento('p', { class: 'sutil', texto: 'Nenhuma keyword informada nesta análise.' }));
+    alvo.replaceChildren(elemento('p', {
+      class: 'sutil',
+      texto: 'Informe as keywords no campo acima para varrer o artigo. O scan é instantâneo e não usa o modelo.',
+    }));
     return;
   }
 
@@ -445,7 +469,9 @@ function desenharKeywords(dado) {
 
   keywords.forEach((k) => {
     const corpo = elemento('div', { class: 'keyword-corpo' }, [
-      elemento('p', { texto: k.sintese }),
+      k.sintese
+        ? elemento('p', { texto: k.sintese })
+        : elemento('p', { class: 'sutil', texto: 'Síntese do modelo ainda não gerada — rode a leitura profunda.' }),
       k.ocorrencias.length ? elemento('p', { class: 'sutil', texto: 'Trechos no artigo:' }) : null,
       ...k.ocorrencias.map((o) => elemento('div', { class: 'trecho' }, [
         elemento('span', { class: 'fonte', texto: `p. ${o.pagina}${o.secao ? ` · ${o.secao}` : ''}` }),
@@ -619,10 +645,17 @@ function ligarEventos() {
   }));
   solta.addEventListener('drop', (e) => enviarArquivos(e.dataTransfer.files));
 
+  let agendado = null;
   $('#keywords').addEventListener('input', (e) => {
     const termos = e.target.value.split(/[,;\n]+/).map((t) => t.trim()).filter(Boolean);
     $('#etiquetas-keywords').replaceChildren(...termos.map((t) =>
       elemento('span', { class: 'etiqueta', texto: t })));
+    clearTimeout(agendado);
+    agendado = setTimeout(async () => {
+      if (!estado.atual) return;
+      await carregarScan(estado.atual);
+      desenharArtigo();
+    }, 400);
   });
 
   $('#btn-analisar').addEventListener('click', () => analisar(false));
