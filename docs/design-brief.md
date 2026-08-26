@@ -1,4 +1,4 @@
-# Briefing de design — Analisador de Artigos em PDF
+# Briefing de design — Grifo
 
 Documento de referência para gerar as telas da aplicação. Descreve o produto, cada tela,
 cada estado, os dados reais que aparecem em tela e os textos exatos usados hoje.
@@ -57,7 +57,7 @@ máquina do usuário. Isso deve ficar legível na interface, não escondido no r
 │              ├────────────────────────────────────────────────────────┤
 │              │  Seletor de artigo em exibição (aparece com 2+)        │
 │              ├────────────────────────────────────────────────────────┤
-│              │  9 abas de resultado                                   │
+│              │  6 abas de resultado                                   │
 └──────────────┴────────────────────────────────────────────────────────┘
 ```
 
@@ -65,7 +65,7 @@ máquina do usuário. Isso deve ficar legível na interface, não escondido no r
 
 ## 4. Barra lateral (presente em todas as telas)
 
-**Topo:** título `📄 Analisador de Artigos`, legenda `v1.0.0 · 100% local via Ollama`.
+**Topo:** título `📄 Grifo`, legenda `v1.0.0 · 100% local via Ollama`.
 
 ### Bloco "Conexao"
 - Campo de texto **URL do Ollama** — valor `http://localhost:11434`, ajuda: `Container: docker compose up -d`
@@ -154,11 +154,12 @@ de design, não ser tratada como estado transitório.
 Quando há 2+ artigos, aparece antes das abas um seletor horizontal:
 `✅ telemedicina_adesao.pdf` | `⏳ custo_telessaude.pdf`
 
-Seis abas: **Visão geral · Leitura · Keywords · Comparar lote · Texto extraído · Exportar**.
-(Resumo, achados e limitações foram fundidos em "Leitura", e a aba de perguntas ao modelo
+Seis abas: **Skim · Scan · Leitura profunda · Comparar lote · Texto extraído · Exportar**.
+(Resumo, achados e limitações estão em "Leitura profunda"; a "Visão geral" antiga foi absorvida
+em "Skim" junto com os metadados, seções e termos sugeridos; e a aba de perguntas ao modelo
 foi retirada — o produto é leitura objetiva, não conversa.)
 
-#### 4.1 Visao geral
+#### 4.1 Skim
 - Título do artigo em destaque, autores como legenda
 - Quatro métricas lado a lado: `Paginas 3` · `Palavras 350` · `Leitura 2 min` · `Referencias 3`
 - `**Secoes detectadas:** Abstract · Introduction · Methods · Results · Discussion · Conclusion · References`
@@ -167,7 +168,7 @@ foi retirada — o produto é leitura objetiva, não conversa.)
 - Avisos da extração, quando houver (ex.: *Quase nenhum texto foi extraido. O PDF
   provavelmente e digitalizado (imagem) e precisaria de OCR para ser analisado.*)
 
-#### 4.2 Leitura — resumo, achados e limitações numa leitura contínua
+#### 4.2 Leitura profunda — resumo, achados e limitações numa leitura contínua
 
 **Resumo** — cinco campos rotulados, no máximo 3 frases cada
 `Objetivo` · `Metodologia` · `Resultados` · `Conclusao` · `Relevancia`
@@ -189,7 +190,7 @@ Cada item: afirmação em negrito + página em itálico + linha de evidência em
 Itens que começam com `Lacuna:` são perguntas não respondidas pelo artigo — merecem
 tratamento visual distinto das limitações admitidas pelos autores.
 
-#### 4.5 Keywords — a tela mais importante do produto
+#### 4.5 Scan — a tela mais importante do produto
 1. Tabela: `Keyword` · `Ocorrencias` · `Paginas` · `Por mil palavras`
    Ex.: `telemedicina | 8 | 1, 2, 3 | 22.86`
 2. Gráfico de barras: distribuição das ocorrências por página, uma série por keyword
@@ -282,8 +283,10 @@ além — um visualizador do PDF grifado dentro da própria página.
 6. Falha em um artigo não derruba os outros; o erro fica marcado naquele artigo.
 7. Recarregar a página zera o lote (estado vive na sessão). Vale sinalizar isso antes que
    o usuário perca trabalho.
-8. Sem Ollama conectado, a análise avisa e para — mas a busca literal de keywords e o PDF
-   grifado **não dependem do modelo** e funcionam mesmo assim (`?keywords=a,b`).
+8. Sem Ollama conectado, **Skim e Scan funcionam por inteiro** — são determinísticos e
+   não passam pelo modelo (`GET /api/itens/{id}/skim`, `GET /api/itens/{id}/scan`). Só a
+   Leitura profunda avisa que o modelo está fora e para. O PDF grifado por keywords
+   também não depende do modelo (`?keywords=a,b`).
 
 ---
 
@@ -303,8 +306,9 @@ Problemas conhecidos da interface atual, em ordem de impacto:
 5. **Nada indica quanto tempo falta.** Com tempo por bloco conhecido, dá para estimar.
 6. **O PDF grifado só existe como botão de download.** Um visualizador embutido, mostrando
    as marcações na hora, seria bem mais forte — e o backend já devolve o PDF anotado.
-7. **Sete abas ainda podem virar menos.** Texto extraído é ferramenta de conferência, não
-   conteúdo de leitura.
+7. **Potencial de poda nas abas.** Texto extraído é ferramenta de conferência e debugging,
+   não conteúdo de leitura — poderia ser acessível por outro caminho (ex.: modal) para
+   desafogar a navegação.
 
 ---
 

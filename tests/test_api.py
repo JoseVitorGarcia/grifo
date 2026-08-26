@@ -80,7 +80,7 @@ def test_status_reporta_ollama_fora(cliente):
 def test_pagina_inicial_entrega_o_front(cliente):
     resposta = cliente.get("/")
     assert resposta.status_code == 200
-    assert "Analisador de Artigos" in resposta.text
+    assert "Grifo" in resposta.text
     assert "/static/app.js" in resposta.text
 
 
@@ -313,3 +313,81 @@ def test_keywords_continuam_apontando_para_o_texto_original(cliente, ollama):
     for ocorrencia in ocorrencias:
         assert "<!--" not in ocorrencia["trecho"]
         assert "##" not in ocorrencia["trecho"]
+
+
+# --- scan deterministico ---------------------------------------------------
+
+def test_scan_responde_sem_analise_previa(cliente):
+    id_a = enviar(cliente, [("a.pdf", ARTIGO_A)]).json()["itens"][0]["id"]
+    dados = cliente.get(f"/api/itens/{id_a}/scan?keywords=telemedicina,adesao").json()
+    assert [k["keyword"] for k in dados["keywords"]] == ["telemedicina", "adesao"]
+    assert dados["keywords"][0]["total"] >= 1
+    assert dados["keywords"][0]["encontrada"] is True
+    assert dados["keywords"][0]["ocorrencias"][0]["pagina"] >= 1
+
+
+def test_scan_marca_keyword_ausente(cliente):
+    id_a = enviar(cliente, [("a.pdf", ARTIGO_A)]).json()["itens"][0]["id"]
+    dados = cliente.get(f"/api/itens/{id_a}/scan?keywords=quimioterapia").json()
+    ausente = dados["keywords"][0]
+    assert ausente["total"] == 0
+    assert ausente["encontrada"] is False
+    assert ausente["ocorrencias"] == []
+
+
+def test_scan_funciona_com_ollama_fora_do_ar(cliente, monkeypatch):
+    # A promessa central: scanning nao depende do modelo. Aponta a config para
+    # uma porta morta e confirma que a rota continua respondendo.
+    monkeypatch.setattr(
+        modulo_api, "CONFIG",
+        dataclasses.replace(Config.do_ambiente(), ollama_url="http://127.0.0.1:9"),
+    )
+    id_a = enviar(cliente, [("a.pdf", ARTIGO_A)]).json()["itens"][0]["id"]
+    resposta = cliente.get(f"/api/itens/{id_a}/scan?keywords=telemedicina")
+    assert resposta.status_code == 200
+    assert resposta.json()["keywords"][0]["total"] >= 1
+
+
+def test_scan_sem_keywords_devolve_lista_vazia(cliente):
+    id_a = enviar(cliente, [("a.pdf", ARTIGO_A)]).json()["itens"][0]["id"]
+    assert cliente.get(f"/api/itens/{id_a}/scan?keywords=").json()["keywords"] == []
+
+
+def test_scan_de_artigo_inexistente_da_404(cliente):
+    assert cliente.get("/api/itens/naoexiste/scan?keywords=a").status_code == 404
+
+
+# --- skim mecanico ---------------------------------------------------------
+
+def test_skim_responde_sem_analise_previa(cliente):
+    id_a = enviar(cliente, [("a.pdf", ARTIGO_A)]).json()["itens"][0]["id"]
+    skim = cliente.get(f"/api/itens/{id_a}/skim").json()["skim"]
+    assert skim["vazio"] is False
+    titulos = [s["titulo"] for s in skim["secoes"]]
+    assert "Methods" in titulos or "Abstract" in titulos
+
+
+def test_skim_traz_paginas_em_todas_as_frases(cliente):
+    id_a = enviar(cliente, [("a.pdf", ARTIGO_A)]).json()["itens"][0]["id"]
+    skim = cliente.get(f"/api/itens/{id_a}/skim").json()["skim"]
+    for lista in (skim["numeros"], skim["conclusoes"]):
+        assert all(item["pagina"] >= 1 for item in lista)
+
+
+def test_skim_captura_o_numero_do_artigo(cliente):
+    id_a = enviar(cliente, [("a.pdf", ARTIGO_A)]).json()["itens"][0]["id"]
+    skim = cliente.get(f"/api/itens/{id_a}/skim").json()["skim"]
+    assert any("240" in f["texto"] for f in skim["numeros"])
+
+
+def test_skim_funciona_com_ollama_fora_do_ar(cliente, monkeypatch):
+    monkeypatch.setattr(
+        modulo_api, "CONFIG",
+        dataclasses.replace(Config.do_ambiente(), ollama_url="http://127.0.0.1:9"),
+    )
+    id_a = enviar(cliente, [("a.pdf", ARTIGO_A)]).json()["itens"][0]["id"]
+    assert cliente.get(f"/api/itens/{id_a}/skim").status_code == 200
+
+
+def test_skim_de_artigo_inexistente_da_404(cliente):
+    assert cliente.get("/api/itens/naoexiste/skim").status_code == 404

@@ -1,6 +1,6 @@
-# Analisador de Artigos em PDF
+# Grifo — leitura assistida de PDFs acadêmicos
 
-Aplicação web local que lê artigos científicos em PDF (**até 5 por sessão**), procura as
+Grifo é uma aplicação web local que lê artigos científicos em PDF (**até 5 por sessão**), procura as
 **keywords que você informa** e produz uma **leitura objetiva** de cada um — resumo
 estruturado, achados com evidência, limitações e lacunas — além de comparar os artigos
 entre si e devolver o **PDF grifado** nas passagens relevantes.
@@ -13,6 +13,8 @@ computador.
 
 | Recurso | O que faz |
 |---|---|
+| **Skim (o essencial)** | Leitura rápida mecânica, em milissegundos e sem modelo: estrutura do artigo, abertura de cada seção, frases com dados numéricos e frases de conclusão — todas com a página. |
+| **Scan (achar termos)** | Busca literal das suas keywords assim que o PDF é enviado: contagem, páginas, densidade por mil palavras e os trechos com o termo destacado. Não passa pelo modelo e funciona com o Ollama fora do ar. |
 | **Conversão para Markdown** | No envio, o PDF vira Markdown: título vira `#`, seções viram `##`, listas são normalizadas, linhas quebradas pelo PDF voltam a ser parágrafos e cada página ganha um marcador em comentário. **É esse texto que o modelo lê** — a estrutura explícita ajuda o SLM a distinguir cabeçalho de corpo e a atribuir a seção certa. Dá para ver e baixar o resultado na aplicação. |
 | **Modo lote** | Até 5 PDFs por sessão, analisados em fila com progresso por artigo em tempo real. O resultado de cada um aparece assim que fica pronto. Duplicatas (mesmo conteúdo) são detectadas por hash e não consomem vaga. |
 | **Keywords híbridas** | Para cada termo: contagem, páginas, densidade por mil palavras, todos os trechos originais com o termo destacado **e** uma síntese do modelo sobre o que o artigo afirma, citando página. O dado bruto fica ao lado da síntese, então dá para conferir se o modelo inventou. |
@@ -91,25 +93,26 @@ PDFs ─► pdf.py ────► Documento (texto limpo + páginas + seções 
                         │
               ┌─────────┴──────────┐
               │                    │
-        keywords.py          markdown.py
-     (busca literal no      (mesma fonte em
-      texto cru, offset      Markdown: o que
-      → página/seção)        o modelo lê)
-              │                    │
-              │         ┌──────────┼──────────┐
-              │    blocos.py   marcacao.py  lote.py
-              │   (blocos com  (grifa o PDF (fila de até 5,
-              │   sobreposição) original)    comparação)
-              │                    │
-              └──────────► analise.py ◄──────┘
-                   (map: notas por bloco →
-                    reduce: resumo, achados,
-                    limitações, sínteses)
-                          │
-                     relatorio.py ─► Markdown / JSON
+        keywords.py   skim.py  markdown.py
+     (busca literal   (leitura  (mesma fonte em
+      no texto cru,  mecânica   Markdown: o que
+      offset →       da estru-   o modelo lê)
+      página/seção)  tura)
+              │         │            │
+              │         │  ┌─────────┼──────────┐
+              │         │  blocos.py   marcacao.py  lote.py
+              │         │ (blocos com  (grifa o PDF (fila de até 5,
+              │         │ sobreposição) original)    comparação)
+              │         │              │
+              └────┬────┴──────► analise.py ◄──────┘
+                   │      (map: notas por bloco →
+                   │       reduce: resumo, achados,
+                   │       limitações, sínteses)
+                   │             │
+                   └────────────relatorio.py ─► Markdown / JSON
 ```
 
-Cinco decisões que valem explicação:
+Seis decisões que valem explicação:
 
 - **Rastreabilidade.** A busca de keywords não passa pelo LLM. O texto é normalizado
   (minúsculas, sem acento) mantendo um mapa de índices de volta ao original, então toda
@@ -130,6 +133,10 @@ Cinco decisões que valem explicação:
 - **Streaming de verdade.** O cliente do Ollama é bloqueante, então a análise roda numa
   thread produtora e os eventos vão para o navegador por SSE conforme acontecem — barra de
   progresso por artigo e resposta do chat aparecendo enquanto o modelo escreve.
+- **Três camadas, separadas por custo.** *Scan* (busca literal) e *Skim* (leitura mecânica
+  da estrutura) são determinísticos e saem em milissegundos; *Leitura profunda* é o modelo,
+  e leva minutos em CPU. As duas primeiras têm rotas próprias e não tocam no Ollama, então
+  a aplicação é útil no instante do envio — e continua útil com o modelo fora do ar.
 
 ## Configuração
 
@@ -159,6 +166,7 @@ O front é só um cliente da API — dá para usar por script:
 | `GET /api/config` · `GET /api/status` | Padrões da aplicação e diagnóstico do Ollama |
 | `POST /api/pdfs` · `GET /api/pdfs` · `DELETE /api/pdfs[/{id}]` | Envio e gestão do lote |
 | `POST /api/analise` | Análise do lote (SSE: `inicio`, `artigo_inicio`, `progresso`, `artigo_fim`, `fim`) |
+| `GET /api/itens/{id}/skim` · `GET /api/itens/{id}/scan?keywords=a,b` | Skim e Scan determinísticos, sem passar pelo modelo |
 | `GET /api/itens/{id}` · `GET /api/itens/{id}/pagina/{n}` | Análise completa e texto por página |
 | `GET /api/itens/{id}/markdown` | O artigo em Markdown (`?download=true` baixa o arquivo) |
 | `GET /api/comparacao` | Tabelas comparativas do lote |
@@ -176,14 +184,16 @@ make test      # ou: ./.venv/bin/python -m pytest
 Os testes precisam do venv (`./setup.sh`), que instala `requirements-dev.txt` — o
 `requirements.txt` tem só o necessário para rodar, que é o que entra na imagem.
 
-135 testes, todos offline e sem navegador: a extração e o grifo rodam sobre PDFs gerados em
+168 testes, todos offline e sem navegador: a extração e o grifo rodam sobre PDFs gerados em
 memória (`tests/pdf_falso.py`), e o pipeline completo — incluindo os endpoints SSE — roda
 contra um servidor Ollama falso (`tests/ollama_falso.py`).
 
 ## Próximos passos
 
-Ideias levantadas e ainda não implementadas — incluindo enquadrar o produto nas técnicas de
-**skimming e scanning** e retirar a pergunta livre ao modelo — estão em
+O produto foi enquadrado nas técnicas de **skimming e scanning** (três camadas: Skim sem
+modelo, Scan determinístico, Leitura profunda com LLM), a pergunta livre ao modelo foi
+retirada, e o foco é hoje leitura objetiva com rastreabilidade. Ideias ainda em aberto —
+como precisão de página nos achados — estão em
 [`docs/proximos-passos.md`](docs/proximos-passos.md).
 
 ## Limitações conhecidas
@@ -209,6 +219,7 @@ analisador/        núcleo, sem HTTP e sem UI
   config.py        parâmetros por variável de ambiente
   pdf.py           extração, limpeza, seções, metadados
   keywords.py      busca determinística com rastreabilidade
+  skim.py          leitura mecânica: estrutura, números e conclusões, sem LLM
   markdown.py      conversão do artigo para Markdown (a visão do modelo)
   blocos.py        divisão do texto em blocos com sobreposição
   llm.py           cliente HTTP do Ollama (streaming + JSON)
@@ -224,7 +235,7 @@ web/               front sem framework e sem build
   index.html · estilo.css · app.js
 docs/              briefing de design e próximos passos
 exemplos/          PDF fictício para testar
-tests/             135 testes offline
+tests/             168 testes offline
 Dockerfile         imagem da aplicação
 docker-compose.yml ollama + download do modelo + app
 ```

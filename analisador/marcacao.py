@@ -156,7 +156,7 @@ def _anotacao(marcacao: Marcacao) -> Highlight:
     if marcacao.comentario:
         # A chave precisa ser NameObject; o valor, TextStringObject.
         destaque[NameObject("/Contents")] = TextStringObject(marcacao.comentario)
-        destaque[NameObject("/T")] = TextStringObject("Analisador de Artigos")
+        destaque[NameObject("/T")] = TextStringObject("Grifo")
     return destaque
 
 

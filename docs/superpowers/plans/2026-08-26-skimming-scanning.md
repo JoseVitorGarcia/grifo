@@ -175,6 +175,14 @@ def test_frase_unica_sem_ponto_final_e_preservada():
     assert separar_frases("Methods") == ["Methods"]
 
 
+def test_corta_frase_antes_de_aspas_curvas():
+    # A classe do lookahead inclui a aspas curva; sem ela, falas citadas em
+    # artigos com tipografia real deixariam de abrir frase nova.
+    frases = separar_frases('Ele concluiu o argumento. “Vamos adiante”, escreveu.')
+    assert len(frases) == 2
+    assert frases[1].startswith("“Vamos adiante")
+
+
 def test_texto_vazio_nao_gera_frase():
     assert separar_frases("   \n  ") == []
 
@@ -350,7 +358,8 @@ MARCADORES_CONCLUSAO: tuple[str, ...] = (
 )
 
 # Corta depois de . ! ? seguidos de espaco e de um inicio de frase plausivel.
-# O lookahead exige maiuscula ou digito, o que preserva "0.001)" e "p. 3".
+# O lookahead exige maiuscula (opcionalmente precedida de aspas ou parentese),
+# o que preserva "0.001)" e "p. 3" sem quebrar.
 _RE_CORTE_FRASE = re.compile(r"(?<=[.!?])\s+(?=[\"'“(\[]?[A-ZÀ-Ú])")
 
 # Dado de verdade: decimal, percentual ou inteiro de 2+ digitos.
@@ -470,14 +479,14 @@ def resumir(documento, *, max_numeros: int = 12, max_conclusoes: int = 8) -> Ski
 - [ ] **Step 4: Rodar os testes para confirmar que passam**
 
 Run: `./.venv/bin/python -m pytest tests/test_skim.py -q`
-Esperado: PASS, 22 testes.
+Esperado: PASS, 23 testes.
 
 Se `test_secao_registra_a_pagina_em_que_comeca` falhar por página errada, confira `paragrafos_com_offset`: o cursor precisa avançar `len(bruto) + 2`, com `bruto` **não** despido, senão os offsets desandam a partir do primeiro bloco com espaço à esquerda.
 
 - [ ] **Step 5: Rodar a suíte inteira**
 
 Run: `./.venv/bin/python -m pytest -q`
-Esperado: PASS, 157 testes (135 + 22). Nenhum teste existente pode quebrar — este módulo não é importado por ninguém ainda.
+Esperado: PASS, 158 testes (135 + 23). Nenhum teste existente pode quebrar — este módulo não é importado por ninguém ainda.
 
 - [ ] **Step 6: Commit**
 
@@ -628,7 +637,7 @@ Esperado: PASS, 5 testes.
 - [ ] **Step 6: Rodar a suíte inteira**
 
 Run: `./.venv/bin/python -m pytest -q`
-Esperado: PASS, 162 testes. Atenção especial aos testes existentes de `POST /api/analise` — a refatoração de `esquemas.py` mudou o caminho do código, mas o JSON tem de sair idêntico. Se algum quebrar, o formato divergiu: compare campo a campo com o bloco original.
+Esperado: PASS, 163 testes. Atenção especial aos testes existentes de `POST /api/analise` — a refatoração de `esquemas.py` mudou o caminho do código, mas o JSON tem de sair idêntico. Se algum quebrar, o formato divergiu: compare campo a campo com o bloco original.
 
 - [ ] **Step 7: Commit**
 
@@ -772,7 +781,7 @@ Esperado: PASS, 5 testes.
 - [ ] **Step 6: Rodar a suíte inteira**
 
 Run: `./.venv/bin/python -m pytest -q`
-Esperado: PASS, 167 testes.
+Esperado: PASS, 168 testes.
 
 - [ ] **Step 7: Commit**
 
@@ -932,7 +941,7 @@ Depois, derrube o Ollama (`docker compose stop ollama`), recarregue e repita: o 
 - [ ] **Step 8: Rodar a suíte**
 
 Run: `./.venv/bin/python -m pytest -q`
-Esperado: PASS, 167 testes. Um teste existente verifica que a página inicial entrega o front (`test_pagina_inicial_entrega_o_front`); se ele checar a string "Keywords" no HTML, atualize-o para a aba nova.
+Esperado: PASS, 168 testes. Um teste existente verifica que a página inicial entrega o front (`test_pagina_inicial_entrega_o_front`); se ele checar a string "Keywords" no HTML, atualize-o para a aba nova.
 
 - [ ] **Step 9: Commit**
 
@@ -1070,7 +1079,7 @@ Acrescente ao fim do arquivo:
 
 .nota-metodo {
   font-size: .85rem;
-  color: var(--sutil, #6b7280);
+  color: var(--texto-sutil, #5c6472);
   border-left: 3px solid var(--primaria, #2f6feb);
   padding: .4rem .7rem;
   margin: .8rem 0;
@@ -1079,7 +1088,7 @@ Acrescente ao fim do arquivo:
 .skim-secoes { display: grid; gap: .9rem; }
 
 .skim-secao {
-  border: 1px solid var(--borda, #d8dde5);
+  border: 1px solid var(--borda, #d9dde5);
   border-radius: 6px;
   padding: .7rem .9rem;
 }
@@ -1097,7 +1106,7 @@ Acrescente ao fim do arquivo:
   margin: .5rem 0 0;
   padding-left: 1.1rem;
   font-size: .9rem;
-  color: var(--sutil, #6b7280);
+  color: var(--texto-sutil, #5c6472);
 }
 
 .skim-esqueleto li { margin: .2rem 0; }
@@ -1106,7 +1115,7 @@ Acrescente ao fim do arquivo:
 Antes de colar, confira os nomes reais das variáveis CSS:
 
 Run: `grep -n "^\s*--" web/estilo.css | head -20`
-Se `--sutil` ou `--borda` não existirem, use os nomes que estiverem lá (os *fallbacks* após a vírgula já garantem que nada fica sem cor, mas o tema escuro só funciona com a variável certa).
+Os nomes reais neste projeto são `--texto-sutil`, `--borda` e `--primaria` (conferido na Task 5); se divergirem, use os que estiverem lá (os *fallbacks* após a vírgula já garantem que nada fica sem cor, mas o tema escuro só funciona com a variável certa).
 
 - [ ] **Step 7: Verificar no navegador**
 
@@ -1115,7 +1124,7 @@ Recarregue `http://localhost:8000`, envie `exemplos/artigo_exemplo.pdf` e olhe a
 - [ ] **Step 8: Rodar a suíte**
 
 Run: `./.venv/bin/python -m pytest -q`
-Esperado: PASS, 167 testes.
+Esperado: PASS, 168 testes.
 
 - [ ] **Step 9: Commit**
 
@@ -1150,7 +1159,16 @@ por:
         <button role="tab" data-aba="leitura">Leitura profunda</button>
 ```
 
+- [ ] **Step 1b: Reordenar para agrupar as camadas por custo**
+
+As Tasks 4 e 5 renomearam as abas no lugar, então `leitura` ficou entre `skim` e `scan` — a camada de minutos encaixada entre as duas de milissegundos, contradizendo a nota do método que o Step 2 acrescenta ("os dois saem em milissegundos"). Mova o botão `data-aba="leitura"` para **depois** do botão `data-aba="scan"`, e faça o mesmo com `<div class="painel" id="painel-leitura">`, que vai para depois de `<div class="painel" id="painel-scan">`.
+
+Mova as linhas inteiras, preservando `data-aba`, `id`, o `class="ativa"` do botão `skim` e o `class="painel ativa"` do `painel-skim`.
+
 A ordem final das abas fica: **Skim · o essencial · Scan · achar termos · Leitura profunda · Comparar lote · Texto extraído · Exportar** — seis, como antes.
+
+Run: `grep -n "data-aba=\|id=\"painel-" web/index.html`
+Esperado: as duas listas na mesma ordem — skim, scan, leitura, comparar, texto, exportar.
 
 - [ ] **Step 2: Acrescentar a nota do método**
 
@@ -1205,7 +1223,7 @@ Recarregue e confirme: as três camadas aparecem nomeadas, a nota do método est
 - [ ] **Step 5: Rodar a suíte**
 
 Run: `./.venv/bin/python -m pytest -q`
-Esperado: PASS, 167 testes.
+Esperado: PASS, 168 testes.
 
 - [ ] **Step 6: Commit**
 

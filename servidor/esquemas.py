@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from analisador.analise import Analise
 from analisador.lote import Item, comparar_keywords, keywords_ausentes, resumo_do_lote
+from analisador.skim import Skim
 
 
 def documento_para_dict(documento) -> dict:
@@ -15,6 +16,27 @@ def documento_para_dict(documento) -> dict:
         "minutos_de_leitura": documento.minutos_de_leitura,
         "secoes": [s.titulo for s in documento.secoes],
         "avisos": documento.avisos,
+    }
+
+
+def resultado_para_dict(resultado, sintese: str = "") -> dict:
+    """Serializa um `ResultadoKeyword`. `sintese` fica vazia no scan puro."""
+    return {
+        "keyword": resultado.keyword,
+        "sintese": sintese,
+        "total": resultado.total,
+        "paginas": resultado.paginas,
+        "densidade_por_mil": resultado.densidade_por_mil,
+        "encontrada": resultado.encontrada,
+        "ocorrencias": [
+            {
+                "pagina": o.pagina,
+                "secao": o.secao,
+                "trecho": o.trecho,
+                "termo": o.termo_encontrado,
+            }
+            for o in resultado.ocorrencias
+        ],
     }
 
 
@@ -30,26 +52,7 @@ def analise_para_dict(analise: Analise | None) -> dict | None:
         "limitacoes": analise.limitacoes,
         "keywords_sugeridas": analise.keywords_sugeridas,
         "erros": analise.erros,
-        "keywords": [
-            {
-                "keyword": s.keyword,
-                "sintese": s.resumo,
-                "total": s.resultado.total,
-                "paginas": s.resultado.paginas,
-                "densidade_por_mil": s.resultado.densidade_por_mil,
-                "encontrada": s.resultado.encontrada,
-                "ocorrencias": [
-                    {
-                        "pagina": o.pagina,
-                        "secao": o.secao,
-                        "trecho": o.trecho,
-                        "termo": o.termo_encontrado,
-                    }
-                    for o in s.resultado.ocorrencias
-                ],
-            }
-            for s in analise.sinteses
-        ],
+        "keywords": [resultado_para_dict(s.resultado, s.resumo) for s in analise.sinteses],
     }
 
 
@@ -73,4 +76,26 @@ def lote_para_dict(itens: list[Item]) -> dict:
         "comparacao": comparar_keywords(analisados),
         "ausentes": keywords_ausentes(analisados),
         "arquivos": [item.nome for item in itens],
+    }
+
+
+def skim_para_dict(skim: Skim) -> dict:
+    """Serializa a leitura rapida mecanica. Toda frase carrega a pagina."""
+    def frase(f) -> dict:
+        return {"texto": f.texto, "pagina": f.pagina, "secao": f.secao}
+
+    return {
+        "titulo": skim.titulo,
+        "vazio": skim.vazio,
+        "secoes": [
+            {
+                "titulo": s.titulo,
+                "pagina": s.pagina,
+                "abertura": s.abertura,
+                "esqueleto": s.esqueleto,
+            }
+            for s in skim.secoes
+        ],
+        "numeros": [frase(f) for f in skim.numeros],
+        "conclusoes": [frase(f) for f in skim.conclusoes],
     }

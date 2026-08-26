@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Analisador de Artigos em PDF</title>
+<title>Grifo — leitura assistida de PDFs acadêmicos</title>
 <link rel="stylesheet" href="/static/estilo.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
 </head>
@@ -14,7 +14,7 @@
     <header class="marca">
       <span class="marca-icone">📄</span>
       <div>
-        <h1>Analisador de Artigos</h1>
+        <h1>Grifo</h1>
         <p class="versao" id="versao">carregando…</p>
       </div>
     </header>
@@ -85,7 +85,7 @@
         placeholder="viés amostral, aprendizado de máquina, validação cruzada"></textarea>
       <div class="etiquetas" id="etiquetas-keywords"></div>
       <div class="acoes">
-        <button class="primario" id="btn-analisar">Analisar pendentes</button>
+        <button class="primario" id="btn-analisar">Leitura profunda dos pendentes</button>
         <button class="secundario" id="btn-reanalisar">Reanalisar tudo</button>
       </div>
     </section>
@@ -96,17 +96,24 @@
       <nav class="seletor" id="seletor-artigos"></nav>
 
       <div class="abas" role="tablist" id="abas">
-        <button role="tab" data-aba="visao" class="ativa">Visão geral</button>
-        <button role="tab" data-aba="leitura">Leitura</button>
-        <button role="tab" data-aba="keywords">Keywords</button>
+        <button role="tab" data-aba="skim" class="ativa">Skim · o essencial</button>
+        <button role="tab" data-aba="scan">Scan · achar termos</button>
+        <button role="tab" data-aba="leitura">Leitura profunda</button>
         <button role="tab" data-aba="comparar">Comparar lote</button>
         <button role="tab" data-aba="texto">Texto extraído</button>
         <button role="tab" data-aba="exportar">Exportar</button>
       </div>
 
-      <div class="painel ativa" id="painel-visao"></div>
+      <p class="nota-metodo" id="nota-metodo">
+        <b>Skim</b> mostra o essencial pela estrutura do artigo e <b>Scan</b> varre os termos
+        que você pediu — os dois saem em milissegundos e não usam o modelo.
+        <b>Leitura profunda</b> é a análise do modelo: leva minutos em CPU e só roda quando
+        você clica em Analisar.
+      </p>
+
+      <div class="painel ativa" id="painel-skim"></div>
+      <div class="painel" id="painel-scan"></div>
       <div class="painel" id="painel-leitura"></div>
-      <div class="painel" id="painel-keywords"></div>
       <div class="painel" id="painel-comparar"></div>
       <div class="painel" id="painel-texto"></div>
       <div class="painel" id="painel-exportar"></div>
