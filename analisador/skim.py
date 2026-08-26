@@ -62,8 +62,12 @@ SECOES_CONCLUSIVAS: tuple[str, ...] = (
     "consideracoes finais",
 )
 
-# Numeracao no inicio do titulo: "4.", "4.1", "IV -", "3)".
-_RE_NUMERACAO_TITULO = re.compile(r"^\s*(?:\d{1,2}(?:\.\d{1,2})*|[ivxIVX]{1,5})\s*[.)\-–]\s*")
+# Numeracao no inicio do titulo: "4.", "1.2", "IV -", "3)". O separador e
+# opcional quando ja ha espaco depois do numero, senao "1.2 Conclusion"
+# perderia so o "1." e sobraria um "2" solto grudado no titulo.
+_RE_NUMERACAO_TITULO = re.compile(
+    r"^\s*(?:\d{1,2}(?:\.\d{1,2})*|[ivxIVX]{1,5})(?:\s*[.)\-–]\s*|\s+)"
+)
 
 
 def secao_e_conclusiva(titulo: str) -> bool:

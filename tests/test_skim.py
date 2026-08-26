@@ -270,6 +270,18 @@ def test_secao_conclusiva_aceita_titulo_numerado_e_composto():
     assert secao_e_conclusiva("Methods") is False
 
 
+def test_secao_conclusiva_aceita_numeracao_multinivel():
+    from analisador.skim import secao_e_conclusiva
+
+    # Regressao: a primeira versao da regex exigia separador logo apos o numero,
+    # entao "1.2 Conclusion" perdia so o "1." e sobrava "2 Conclusion".
+    assert secao_e_conclusiva("1.2 Conclusion") is True
+    assert secao_e_conclusiva("2.3 Conclusions") is True
+    assert secao_e_conclusiva("5.1 Consideracoes finais") is True
+    # Titulo que comeca com letra de numeral romano nao pode ser despido.
+    assert secao_e_conclusiva("Vies amostral") is False
+
+
 def test_discussion_com_frase_marcada_nao_vira_secao_inteira():
     # O caso de maior risco: secao longa, vizinha da Conclusion, com UMA frase marcada.
     documento = documento_de([
