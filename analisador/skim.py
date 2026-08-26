@@ -29,7 +29,6 @@ MARCADORES_CONCLUSAO: tuple[str, ...] = (
     "concluiu-se",
     "em conclusao",
     "os resultados mostram",
-    "os resultados indicam",
     "os achados sugerem",
     "este estudo mostra",
     "portanto",
@@ -37,11 +36,10 @@ MARCADORES_CONCLUSAO: tuple[str, ...] = (
     "por fim",
     "os resultados sugerem",
     "os achados indicam",
+    "sugere que",
     "sugerem que",
-    "indicam que",
     "mostram que",
     "our findings",
-    "we found",
     "suggest that",
     "indicate that",
     "we conclude",
@@ -63,6 +61,25 @@ SECOES_CONCLUSIVAS: tuple[str, ...] = (
     "conclusions",
     "consideracoes finais",
 )
+
+# Numeracao no inicio do titulo: "4.", "4.1", "IV -", "3)".
+_RE_NUMERACAO_TITULO = re.compile(r"^\s*(?:\d{1,2}(?:\.\d{1,2})*|[ivxIVX]{1,5})\s*[.)\-–]\s*")
+
+
+def secao_e_conclusiva(titulo: str) -> bool:
+    """Diz se o conteudo de uma secao e conclusivo pelo titulo dela.
+
+    Casa titulo numerado ("4. Conclusion") e titulo composto que ABRE com o
+    termo ("Conclusions and Future Work"). Nao casa "Discussion and Conclusion":
+    secao combinada e longa, e trata-la inteira como conclusiva afogaria a
+    lista — ali o caminho por marcador continua valendo.
+    """
+    limpo = normalizar(_RE_NUMERACAO_TITULO.sub("", titulo)).strip()
+    for nome in SECOES_CONCLUSIVAS:
+        if limpo == nome or limpo.startswith(nome + " "):
+            return True
+    return False
+
 
 # Corta depois de . ! ? seguidos de espaco e de um inicio de frase plausivel.
 # O lookahead exige maiuscula (acompanhada opcionalmente de aspas retas/curvas ou
@@ -175,7 +192,7 @@ def resumir(documento, *, max_numeros: int = 12, max_conclusoes: int = 8) -> Ski
                 atual.esqueleto.append(frases[-1])
 
         # Numa secao de conclusao toda frase conta; fora dela, so as marcadas.
-        secao_conclusiva = normalizar(atual.titulo) in SECOES_CONCLUSIVAS
+        secao_conclusiva = secao_e_conclusiva(atual.titulo)
 
         for frase in frases:
             if len(skim.numeros) < max_numeros and tem_numero(frase):

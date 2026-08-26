@@ -246,3 +246,44 @@ def test_pdf_de_exemplo_do_projeto_rende_conclusoes():
     skim = resumir(converter(extrair_documento(caminho.read_bytes())))
     assert skim.conclusoes, "o artigo de exemplo tem secao Conclusion e deve render conclusoes"
     assert all(f.pagina >= 1 for f in skim.conclusoes)
+
+
+def test_marcadores_genericos_nao_capturam_frase_descritiva():
+    # Contraexemplos reais que a revisao levantou: sao descricao de dado, nao conclusao.
+    assert e_conclusiva("Os dados indicam que a amostra teve perda de seguimento de 5%.") is False
+    assert e_conclusiva("We found a baseline imbalance between groups regarding smoking status.") is False
+
+
+def test_marcador_no_singular_tambem_conta():
+    assert e_conclusiva("O estudo sugere que a adesao melhora com lembretes.") is True
+
+
+def test_secao_conclusiva_aceita_titulo_numerado_e_composto():
+    from analisador.skim import secao_e_conclusiva
+
+    assert secao_e_conclusiva("Conclusion") is True
+    assert secao_e_conclusiva("4. Conclusion") is True
+    assert secao_e_conclusiva("Conclusions and Future Work") is True
+    assert secao_e_conclusiva("Consideracoes finais") is True
+    # Secao combinada fica de fora de proposito: e longa demais para entrar inteira.
+    assert secao_e_conclusiva("Discussion and Conclusion") is False
+    assert secao_e_conclusiva("Methods") is False
+
+
+def test_discussion_com_frase_marcada_nao_vira_secao_inteira():
+    # O caso de maior risco: secao longa, vizinha da Conclusion, com UMA frase marcada.
+    documento = documento_de([
+        "\n".join([
+            "Discussion",
+            "Os resultados sugerem que o acompanhamento remoto melhora a adesao.",
+            "",
+            "O estudo foi conduzido em um unico centro, o que restringe a generalizacao.",
+            "",
+            "A medida de adesao por contagem de comprimidos superestima o uso real.",
+        ]),
+    ])
+    skim = resumir(converter(documento))
+    textos = [f.texto for f in skim.conclusoes]
+    assert any("resultados sugerem" in t for t in textos)
+    assert not any("unico centro" in t for t in textos)
+    assert not any("superestima" in t for t in textos)
