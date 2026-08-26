@@ -222,6 +222,40 @@ def _inferir_titulo(paginas: list[str]) -> str:
     return ""
 
 
+# Nome proprio em Title Case ("Fulana de Tal"), com conectores comuns em
+# nomes de lingua portuguesa; linhas em CAIXA ALTA (titulos/cabecalhos) nao
+# casam, pois exigem letras minusculas apos a inicial de cada palavra.
+_CONECTOR = r"de|da|do|dos|das|e|El|Von|von|van|Jr\.?"
+_PALAVRA_NOME = rf"[A-ZÀ-Ý][a-zà-ÿ'\-]+|{_CONECTOR}"
+_RE_LINHA_AUTOR = re.compile(rf"^(?:{_PALAVRA_NOME})(?:\s+(?:{_PALAVRA_NOME})){{1,5}}[\s\d,\*†‡]{{0,10}}$")
+_RE_RODAPE_NOME = re.compile(r"[\s\d,\*†‡]+$")
+
+
+def _inferir_autores(paginas: list[str]) -> str:
+    """Heuristica: bloco de linhas em Title Case perto do topo da pagina 1,
+    tipico da assinatura de autoria (com marcadores de nota de rodape, ex.:
+    "Fulana de Tal 1"). Serve para nao depender so do metadado /Author do
+    PDF, que normalmente reflete quem editou o arquivo por ultimo no Word
+    (ex.: dono de um template reaproveitado) e nao quem escreveu o texto.
+    """
+    if not paginas:
+        return ""
+    candidatos: list[str] = []
+    for linha in paginas[0].split("\n")[:25]:
+        despida = linha.strip()
+        if not despida:
+            if candidatos:
+                break
+            continue
+        if 4 <= len(despida) <= 70 and _RE_LINHA_AUTOR.match(despida):
+            nome = _RE_RODAPE_NOME.sub("", despida)
+            if nome:
+                candidatos.append(nome)
+        elif candidatos:
+            break
+    return "; ".join(candidatos)
+
+
 def extrair_documento(fonte: BinaryIO | bytes | str) -> Documento:
     """Le um PDF (caminho, bytes ou file-like) e devolve o `Documento` limpo."""
     if isinstance(fonte, bytes):
@@ -263,6 +297,9 @@ def extrair_documento(fonte: BinaryIO | bytes | str) -> Documento:
         inferido = _inferir_titulo(limpas)
         if inferido:
             metadados["titulo"] = inferido
+    autores_do_texto = _inferir_autores(limpas)
+    if autores_do_texto:
+        metadados["autores"] = autores_do_texto
     doi = _RE_DOI.search(texto_completo[:6000])
     if doi:
         metadados["doi"] = doi.group(0).rstrip(".")
