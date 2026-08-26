@@ -267,3 +267,39 @@ h3.secao:first-child { margin-top: 0; }
   .barra { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--borda); }
   .conteudo { padding: 20px 16px 60px; }
 }
+
+/* --- Skim: leitura rapida mecanica ------------------------------------- */
+
+.nota-metodo {
+  font-size: .85rem;
+  color: var(--texto-sutil, #5c6472);
+  border-left: 3px solid var(--primaria, #2f6feb);
+  padding: .4rem .7rem;
+  margin: .8rem 0;
+}
+
+.skim-secoes { display: grid; gap: .9rem; }
+
+.skim-secao {
+  border: 1px solid var(--borda, #d9dde5);
+  border-radius: 6px;
+  padding: .7rem .9rem;
+}
+
+.skim-topo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .6rem;
+}
+
+.skim-topo h4 { margin: 0; }
+
+.skim-esqueleto {
+  margin: .5rem 0 0;
+  padding-left: 1.1rem;
+  font-size: .9rem;
+  color: var(--texto-sutil, #5c6472);
+}
+
+.skim-esqueleto li { margin: .2rem 0; }

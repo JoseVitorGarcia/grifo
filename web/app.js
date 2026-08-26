@@ -10,6 +10,7 @@ const estado = {
   itens: [],          // {id, nome, titulo, analisado, documento}
   detalhes: {},       // id -> objeto completo com analise
   scan: {},           // id -> {keywords: [...]} vindo de /scan, sem LLM
+  skims: {},          // id -> leitura rapida mecanica, sem LLM
   atual: null,
   comparacao: null,
   analisando: false,
@@ -288,6 +289,7 @@ async function abrirArtigo(id) {
     try { estado.detalhes[id] = await api(`/api/itens/${id}`); } catch (_) { return; }
   }
   await carregarScan(id);
+  await carregarSkim(id);
   desenharSeletor();
   desenharArtigo();
 }
@@ -305,6 +307,14 @@ async function carregarScan(id) {
   }
 }
 
+/** Leitura rapida mecanica. Como o scan, roda sem o modelo. */
+async function carregarSkim(id) {
+  if (estado.skims[id]) return;  // o skim nao muda com as keywords
+  try {
+    estado.skims[id] = (await api(`/api/itens/${id}/skim`)).skim;
+  } catch (_) { /* sem skim a aba mostra so os metadados */ }
+}
+
 function artigoAtual() {
   return estado.detalhes[estado.atual];
 }
@@ -312,7 +322,7 @@ function artigoAtual() {
 function desenharArtigo() {
   const dado = artigoAtual();
   if (!dado) return;
-  desenharVisao(dado);
+  desenharSkim(dado);
   desenharLeitura(dado);
   desenharScan(dado);
   desenharTexto(dado);
@@ -320,7 +330,7 @@ function desenharArtigo() {
   desenharComparacao();
 }
 
-function desenharVisao(dado) {
+function desenharSkim(dado) {
   const doc = dado.documento;
   const meta = doc.metadados || {};
   const filhos = [
@@ -354,7 +364,45 @@ function desenharVisao(dado) {
   (dado.analise?.erros || []).forEach((erro) =>
     filhos.push(elemento('div', { class: 'erro-bloco', texto: erro })));
 
-  $('#painel-visao').replaceChildren(...filhos.filter(Boolean));
+  const skim = estado.skims[dado.id];
+  if (skim && !skim.vazio) {
+    filhos.push(elemento('p', {
+      class: 'nota-metodo',
+      texto: 'Leitura rápida mecânica: abertura de cada seção, dados numéricos e frases de conclusão. Sai em milissegundos e não usa o modelo.',
+    }));
+
+    if (skim.secoes.length) {
+      filhos.push(elemento('h3', { class: 'secao', texto: 'Estrutura do artigo' }));
+      filhos.push(elemento('div', { class: 'skim-secoes' }, skim.secoes.map((s) =>
+        elemento('div', { class: 'skim-secao' }, [
+          elemento('div', { class: 'skim-topo' }, [
+            elemento('h4', { texto: s.titulo }),
+            elemento('span', { class: 'fonte', texto: `p. ${s.pagina}` }),
+          ]),
+          s.abertura ? elemento('p', { texto: s.abertura }) : null,
+          s.esqueleto.length
+            ? elemento('ul', { class: 'skim-esqueleto' },
+                s.esqueleto.map((frase) => elemento('li', { texto: frase })))
+            : null,
+        ].filter(Boolean)))));
+    }
+
+    const listas = [
+      ['Dados numéricos', skim.numeros],
+      ['Frases de conclusão', skim.conclusoes],
+    ];
+    for (const [rotulo, frases] of listas) {
+      if (!frases.length) continue;
+      filhos.push(elemento('h3', { class: 'secao', texto: rotulo }));
+      filhos.push(elemento('div', {}, frases.map((f) =>
+        elemento('div', { class: 'trecho' }, [
+          elemento('span', { class: 'fonte', texto: `p. ${f.pagina}${f.secao ? ` · ${f.secao}` : ''}` }),
+          elemento('span', { texto: f.texto }),
+        ]))));
+    }
+  }
+
+  $('#painel-skim').replaceChildren(...filhos.filter(Boolean));
 }
 
 function metrica(rotulo, valor) {
