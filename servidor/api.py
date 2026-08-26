@@ -42,13 +42,14 @@ from analisador.lote import Item, triar, vagas
 from analisador.markdown import converter as converter_markdown
 from analisador.marcacao import marcar
 from analisador.pdf import extrair_documento
+from analisador.skim import resumir as resumir_skim
 from analisador.relatorio import (
     para_json,
     para_json_lote,
     para_markdown,
     para_markdown_lote,
 )
-from servidor.esquemas import item_para_dict, lote_para_dict, resultado_para_dict
+from servidor.esquemas import item_para_dict, lote_para_dict, resultado_para_dict, skim_para_dict
 from servidor.sessao import COOKIE, Repositorio
 
 from pathlib import Path
@@ -288,6 +289,22 @@ def scan(
 
     resultados = buscar_varias(item.documento, separar_keywords(keywords), flexivel=flexivel)
     corpo = {"id": identificador, "keywords": [resultado_para_dict(r) for r in resultados]}
+    return com_cookie(JSONResponse(corpo), sessao)
+
+
+@app.get("/api/itens/{identificador}/skim")
+def skim(requisicao: Request, identificador: str) -> Response:
+    """Leitura rapida mecanica: estrutura, aberturas, numeros e conclusoes.
+
+    Le a versao em Markdown, onde os paragrafos ja vem remontados. Como o scan,
+    nao toca no modelo.
+    """
+    sessao = sessao_do(requisicao)
+    item = sessao.item(identificador)
+    if not item:
+        return JSONResponse({"erro": "artigo nao encontrado nesta sessao"}, status_code=404)
+
+    corpo = {"id": identificador, "skim": skim_para_dict(resumir_skim(item.para_o_modelo))}
     return com_cookie(JSONResponse(corpo), sessao)
 
 

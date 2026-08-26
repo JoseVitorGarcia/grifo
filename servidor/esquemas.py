@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from analisador.analise import Analise
 from analisador.lote import Item, comparar_keywords, keywords_ausentes, resumo_do_lote
+from analisador.skim import Skim
 
 
 def documento_para_dict(documento) -> dict:
@@ -75,4 +76,26 @@ def lote_para_dict(itens: list[Item]) -> dict:
         "comparacao": comparar_keywords(analisados),
         "ausentes": keywords_ausentes(analisados),
         "arquivos": [item.nome for item in itens],
+    }
+
+
+def skim_para_dict(skim: Skim) -> dict:
+    """Serializa a leitura rapida mecanica. Toda frase carrega a pagina."""
+    def frase(f) -> dict:
+        return {"texto": f.texto, "pagina": f.pagina, "secao": f.secao}
+
+    return {
+        "titulo": skim.titulo,
+        "vazio": skim.vazio,
+        "secoes": [
+            {
+                "titulo": s.titulo,
+                "pagina": s.pagina,
+                "abertura": s.abertura,
+                "esqueleto": s.esqueleto,
+            }
+            for s in skim.secoes
+        ],
+        "numeros": [frase(f) for f in skim.numeros],
+        "conclusoes": [frase(f) for f in skim.conclusoes],
     }

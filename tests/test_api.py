@@ -355,3 +355,39 @@ def test_scan_sem_keywords_devolve_lista_vazia(cliente):
 
 def test_scan_de_artigo_inexistente_da_404(cliente):
     assert cliente.get("/api/itens/naoexiste/scan?keywords=a").status_code == 404
+
+
+# --- skim mecanico ---------------------------------------------------------
+
+def test_skim_responde_sem_analise_previa(cliente):
+    id_a = enviar(cliente, [("a.pdf", ARTIGO_A)]).json()["itens"][0]["id"]
+    skim = cliente.get(f"/api/itens/{id_a}/skim").json()["skim"]
+    assert skim["vazio"] is False
+    titulos = [s["titulo"] for s in skim["secoes"]]
+    assert "Methods" in titulos or "Abstract" in titulos
+
+
+def test_skim_traz_paginas_em_todas_as_frases(cliente):
+    id_a = enviar(cliente, [("a.pdf", ARTIGO_A)]).json()["itens"][0]["id"]
+    skim = cliente.get(f"/api/itens/{id_a}/skim").json()["skim"]
+    for lista in (skim["numeros"], skim["conclusoes"]):
+        assert all(item["pagina"] >= 1 for item in lista)
+
+
+def test_skim_captura_o_numero_do_artigo(cliente):
+    id_a = enviar(cliente, [("a.pdf", ARTIGO_A)]).json()["itens"][0]["id"]
+    skim = cliente.get(f"/api/itens/{id_a}/skim").json()["skim"]
+    assert any("240" in f["texto"] for f in skim["numeros"])
+
+
+def test_skim_funciona_com_ollama_fora_do_ar(cliente, monkeypatch):
+    monkeypatch.setattr(
+        modulo_api, "CONFIG",
+        dataclasses.replace(Config.do_ambiente(), ollama_url="http://127.0.0.1:9"),
+    )
+    id_a = enviar(cliente, [("a.pdf", ARTIGO_A)]).json()["itens"][0]["id"]
+    assert cliente.get(f"/api/itens/{id_a}/skim").status_code == 200
+
+
+def test_skim_de_artigo_inexistente_da_404(cliente):
+    assert cliente.get("/api/itens/naoexiste/skim").status_code == 404
