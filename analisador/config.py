@@ -32,12 +32,14 @@ class Config:
     ollama_url: str = "http://localhost:11434"
     modelo: str = "gemma3:4b"
     # Janela de contexto pedida ao Ollama. O padrao do servidor e 2048/4096,
-    # baixo demais para artigos; 8192 equilibra qualidade e RAM em CPU.
-    num_ctx: int = 8192
+    # baixo demais para artigos; 6144 cobre um bloco de 8000 chars com folga e
+    # segura a RAM em CPU (KV cache menor).
+    num_ctx: int = 6144
     temperatura: float = 0.2
     timeout_s: int = 600
-    # Tamanho dos blocos de texto enviados ao modelo, em caracteres.
-    tamanho_bloco: int = 6000
+    # Tamanho dos blocos de texto enviados ao modelo, em caracteres. Blocos
+    # maiores = menos chamadas ao modelo (a etapa mais cara em CPU).
+    tamanho_bloco: int = 8000
     sobreposicao_bloco: int = 400
     # Limite de blocos processados na etapa de map (protege contra PDFs enormes).
     max_blocos: int = 24

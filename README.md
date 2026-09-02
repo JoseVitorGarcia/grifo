@@ -146,10 +146,10 @@ Ajustável pela barra lateral e por variáveis de ambiente (veja `.env.example`)
 |---|---|---|
 | `OLLAMA_URL` | `http://localhost:11434` | Endereço do Ollama |
 | `OLLAMA_MODELO` | `gemma3:4b` | Modelo usado na análise |
-| `OLLAMA_NUM_CTX` | `8192` | Janela de contexto pedida ao modelo |
+| `OLLAMA_NUM_CTX` | `6144` | Janela de contexto pedida ao modelo |
 | `OLLAMA_TEMPERATURA` | `0.2` | Baixa, para leitura factual |
 | `OLLAMA_TIMEOUT` | `600` | Segundos de espera por resposta |
-| `ANALISADOR_TAMANHO_BLOCO` | `6000` | Caracteres por bloco enviado ao modelo |
+| `ANALISADOR_TAMANHO_BLOCO` | `8000` | Caracteres por bloco enviado ao modelo |
 | `ANALISADOR_MAX_BLOCOS` | `24` | Teto de blocos lidos por artigo |
 | `PORTA` | `8000` | Porta publicada da aplicação web |
 

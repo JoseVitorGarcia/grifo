@@ -3,7 +3,7 @@
 
 'use strict';
 
-const OPCOES_CTX = [2048, 4096, 8192, 16384, 32768];
+const OPCOES_CTX = [2048, 4096, 6144, 8192, 16384, 32768];
 
 const estado = {
   limite: 5,
