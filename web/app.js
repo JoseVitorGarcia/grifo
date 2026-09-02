@@ -157,6 +157,7 @@ function desenharLote(vagas) {
   $('#vagas-texto').textContent = `${vagas ?? estado.limite - total} vaga(s) restante(s) · somente .pdf`;
   $('#btn-limpar').classList.toggle('oculto', total === 0);
   $('#area-keywords').classList.toggle('oculto', total === 0);
+  $('#area-prova').classList.toggle('oculto', total > 0);
 
   $('#lista-arquivos').replaceChildren(...estado.itens.map((item) =>
     elemento('li', {}, [
@@ -184,6 +185,7 @@ async function carregarLote() {
   estado.limite = dados.limite;
   estado.itens = dados.itens;
   $('#limite-texto').textContent = dados.limite;
+  $('#prova-limite').textContent = dados.limite;
   if (!estado.atual && dados.itens.length) estado.atual = dados.itens[0].id;
   desenharLote(dados.vagas);
   if (estado.atual) await abrirArtigo(estado.atual);

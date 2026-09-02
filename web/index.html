@@ -110,6 +110,62 @@
       <button class="secundario oculto" id="btn-limpar">Limpar lote</button>
     </section>
 
+    <section class="oculto" id="area-prova">
+      <div class="pilares">
+        <div class="pilar">
+          <svg class="pilar-icone" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path><path d="M9 12l2 2 4-4"></path>
+          </svg>
+          <b>100% local</b>
+          <p class="sutil">Extração e modelo rodam na sua máquina. Nenhum trecho do artigo sai daqui.</p>
+        </div>
+        <div class="pilar">
+          <svg class="pilar-icone" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3l9 5-9 5-9-5z"></path><path d="M3 13l9 5 9-5"></path>
+          </svg>
+          <b>Lote de até <span id="prova-limite">5</span></b>
+          <p class="sutil">Manda o lote inteiro de uma vez; os artigos entram numa fila e cada resultado aparece assim que fica pronto.</p>
+        </div>
+        <div class="pilar">
+          <svg class="pilar-icone" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 15l6-6"></path><path d="M11 6l1-1a4 4 0 0 1 6 6l-2 2"></path><path d="M13 18l-1 1a4 4 0 0 1-6-6l2-2"></path>
+          </svg>
+          <b>Rastreável</b>
+          <p class="sutil">Toda frase da síntese vem colada ao trecho original do artigo, com número de página.</p>
+        </div>
+        <div class="pilar">
+          <svg class="pilar-icone" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 20h5"></path><path d="M14 4l6 6-9 9H5v-6z"></path><path d="M12 6l6 6"></path>
+          </svg>
+          <b>PDF grifado</b>
+          <p class="sutil">Baixe o PDF original com as keywords em amarelo e as evidências em verde, marcadas no texto.</p>
+        </div>
+      </div>
+
+      <div class="cartao exemplo-rastro">
+        <p class="exemplo-titulo">Cada afirmação fica colada à sua evidência</p>
+        <div class="rastro-par">
+          <div class="rastro-lado">
+            <span class="rastro-rotulo">Síntese do modelo</span>
+            <p>A adesão ao tratamento subiu 18 pontos percentuais no grupo telemedicina.
+              <span class="rastro-pagina">p. 2</span>
+            </p>
+          </div>
+          <div class="rastro-lado">
+            <span class="rastro-rotulo">Trecho no artigo</span>
+            <p class="rastro-fonte">…adesão de <mark>78%</mark> no grupo telemedicina contra <mark>60%</mark>
+              no grupo de controle (IC 95% 11–25; p&nbsp;&lt;&nbsp;0,001)…</p>
+          </div>
+        </div>
+        <p class="sutil exemplo-nota">Exemplo real da saída: a síntese da IA à esquerda, o trecho do PDF à direita, sempre com a página.</p>
+      </div>
+
+      <p class="fluxo">
+        Envie os PDFs <span>→</span> escolha as keywords <span>→</span> Skim e Scan saem na hora
+        <span aria-hidden="true">·</span> Leitura profunda roda o modelo local
+      </p>
+    </section>
+
     <section class="cartao oculto" id="area-keywords">
       <label for="keywords">Keywords — valem para todos os artigos do lote</label>
       <textarea id="keywords" rows="3"
