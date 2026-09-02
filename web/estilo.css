@@ -388,6 +388,32 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 }
 .seletor button.ativa { border-color: var(--primaria); color: var(--primaria); font-weight: 600; }
 
+/* Tira de comparacao: um mini-card por artigo do lote, acima das abas. */
+.tira-resumo {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.tira-card {
+  flex: 1 1 180px; min-width: 160px; max-width: 280px;
+  display: flex; flex-direction: column; gap: 4px;
+  text-align: left; padding: 8px 10px;
+  background: var(--superficie); border: 1px solid var(--borda);
+  border-radius: var(--raio-sm); color: var(--texto-sutil);
+  transition: border-color .15s var(--ease), background .15s var(--ease);
+}
+.tira-card:hover { border-color: var(--primaria-acao); }
+.tira-card.ativa {
+  border-color: var(--primaria); background: var(--superficie-2);
+}
+.tira-nome {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 600; color: var(--texto);
+}
+.tira-dot { flex: none; font-size: 11px; }
+.tira-arquivo { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tira-metricas { font-size: 11px; }
+.tira-kw { font-size: 11px; font-variant-numeric: tabular-nums; }
+.tira-card.ativa .tira-kw { color: var(--primaria); font-weight: 600; }
+
 .abas { position: relative; display: flex; gap: 2px; border-bottom: 1px solid var(--borda); margin-bottom: 18px; overflow-x: auto; }
 .abas button {
   background: none; border: 0; border-radius: 0;

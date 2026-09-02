@@ -180,13 +180,13 @@
     <section class="oculto" id="area-fila"></section>
 
     <section class="oculto" id="area-resultado">
-      <nav class="seletor" id="seletor-artigos"></nav>
+      <nav class="tira-resumo" id="seletor-artigos" aria-label="Artigos do lote"></nav>
 
       <div class="abas" role="tablist" id="abas">
         <button role="tab" data-aba="skim" class="ativa">Skim · o essencial</button>
+        <button role="tab" data-aba="comparar" class="oculto">Comparar lote</button>
         <button role="tab" data-aba="scan">Scan · achar termos</button>
         <button role="tab" data-aba="leitura">Leitura profunda</button>
-        <button role="tab" data-aba="comparar">Comparar lote</button>
         <button role="tab" data-aba="texto">Texto extraído</button>
         <button role="tab" data-aba="exportar">Exportar</button>
         <span class="abas-indicador" id="abas-indicador"></span>
@@ -200,9 +200,9 @@
       </p>
 
       <div class="painel ativa" id="painel-skim"></div>
+      <div class="painel" id="painel-comparar"></div>
       <div class="painel" id="painel-scan"></div>
       <div class="painel" id="painel-leitura"></div>
-      <div class="painel" id="painel-comparar"></div>
       <div class="painel" id="painel-texto"></div>
       <div class="painel" id="painel-exportar"></div>
     </section>

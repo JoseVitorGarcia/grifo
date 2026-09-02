@@ -176,7 +176,16 @@ function desenharLote(vagas) {
   $('#btn-analisar').disabled = pendentes === 0 || estado.analisando;
   $('#btn-reanalisar').disabled = total === 0 || estado.analisando;
   $('#area-resultado').classList.toggle('oculto', total === 0);
-  desenharSeletor();
+
+  // A aba "Comparar lote" so faz sentido com 2+ artigos; some e, se estiver
+  // ativa quando o lote encolhe, cai de volta para o Skim.
+  const abaComparar = $('.abas button[data-aba="comparar"]');
+  abaComparar.classList.toggle('oculto', total < 2);
+  if (total < 2 && abaComparar.classList.contains('ativa')) {
+    $('.abas button[data-aba="skim"]').click();
+  }
+
+  desenharTiraResumo();
   if (total > 0) requestAnimationFrame(() => moverIndicadorAba($('.abas button.ativa')));
 }
 
@@ -187,6 +196,7 @@ async function carregarLote() {
   $('#limite-texto').textContent = dados.limite;
   $('#prova-limite').textContent = dados.limite;
   if (!estado.atual && dados.itens.length) estado.atual = dados.itens[0].id;
+  await atualizarComparacao();
   desenharLote(dados.vagas);
   if (estado.atual) await abrirArtigo(estado.atual);
 }
@@ -371,15 +381,39 @@ async function analisar(reanalisar) {
 
 // ---------------------------------------------------------------- artigos
 
-function desenharSeletor() {
+/** Tira de mini-cards, um por artigo do lote — comparacao a olho, visivel em qualquer aba.
+ *  Clicar troca o artigo em exibicao. So aparece com 2+ artigos. */
+function desenharTiraResumo() {
   const alvo = $('#seletor-artigos');
-  alvo.classList.toggle('oculto', estado.itens.length < 2);
-  alvo.replaceChildren(...estado.itens.map((item) =>
-    elemento('button', {
-      class: item.id === estado.atual ? 'ativa' : '',
-      texto: `${item.analisado ? '✅' : '⏳'} ${item.nome}`,
+  const mostrar = estado.itens.length >= 2;
+  alvo.classList.toggle('oculto', !mostrar);
+  if (!mostrar) { alvo.replaceChildren(); return; }
+
+  const resumo = {};
+  (estado.comparacao?.resumo || []).forEach((linha) => { resumo[linha.Arquivo] = linha; });
+
+  alvo.replaceChildren(...estado.itens.map((item) => {
+    const linha = resumo[item.nome];
+    const kw = linha && linha['Keywords encontradas'] ? linha['Keywords encontradas'] : '—';
+    const metricas = linha ? `${numero(linha.Paginas)} p · ${numero(linha.Palavras)} palavras` : '';
+    return elemento('button', {
+      class: `tira-card${item.id === estado.atual ? ' ativa' : ''}`,
       onclick: () => abrirArtigo(item.id),
-    })));
+    }, [
+      elemento('span', { class: 'tira-nome' }, [
+        elemento('span', { class: 'tira-dot', texto: item.analisado ? '✅' : '⏳' }),
+        elemento('span', { class: 'tira-arquivo', texto: item.nome, title: item.titulo }),
+      ]),
+      metricas ? elemento('span', { class: 'tira-metricas', texto: metricas }) : null,
+      elemento('span', { class: 'tira-kw', texto: `keywords: ${kw}` }),
+    ].filter(Boolean));
+  }));
+}
+
+/** Recarrega a visao geral do lote (sem LLM, barata). Zera se o lote encolheu para < 2. */
+async function atualizarComparacao() {
+  if (estado.itens.length < 2) { estado.comparacao = null; return; }
+  try { estado.comparacao = await api('/api/comparacao'); } catch (_) { /* mantem o que houver */ }
 }
 
 async function abrirArtigo(id) {
@@ -389,7 +423,7 @@ async function abrirArtigo(id) {
   }
   await carregarScan(id);
   await carregarSkim(id);
-  desenharSeletor();
+  desenharTiraResumo();
   desenharArtigo();
 }
 
@@ -666,9 +700,7 @@ function desenharScan(dado) {
 
 async function desenharComparacao() {
   const alvo = $('#painel-comparar');
-  if (!estado.comparacao) {
-    try { estado.comparacao = await api('/api/comparacao'); } catch (_) { return; }
-  }
+  try { estado.comparacao = await api('/api/comparacao'); } catch (_) { if (!estado.comparacao) return; }
   const dados = estado.comparacao;
   const filhos = [elemento('h3', { class: 'secao', texto: 'Artigos do lote' })];
 
@@ -857,7 +889,7 @@ function ligarEventos() {
   $$('.abas button').forEach((botao) => botao.addEventListener('click', () => {
     $$('.abas button').forEach((b) => b.classList.toggle('ativa', b === botao));
     $$('.painel').forEach((p) => p.classList.toggle('ativa', p.id === `painel-${botao.dataset.aba}`));
-    if (botao.dataset.aba === 'comparar') { estado.comparacao = null; desenharComparacao(); }
+    if (botao.dataset.aba === 'comparar') { desenharComparacao().then(desenharTiraResumo); }
     moverIndicadorAba(botao);
   }));
   window.addEventListener('resize', () => moverIndicadorAba($('.abas button.ativa')));
