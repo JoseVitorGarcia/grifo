@@ -47,6 +47,28 @@ function comDestaque(trecho) {
 
 const numero = (valor) => Number(valor || 0).toLocaleString('pt-BR');
 
+// ------------------------------------------------ estimativa de tempo restante
+
+/** Regra de tres: se levou `decorridoMs` para chegar a `fracao`, quanto falta (em segundos). */
+function estimarRestante(decorridoMs, fracao) {
+  if (!(fracao > 0) || !(decorridoMs > 0)) return null;
+  return (decorridoMs / 1000) * (1 - fracao) / fracao;
+}
+
+/** "menos de 1 min" · "~3 min" · "~1 h 5 min". Devolve null se nao der para estimar. */
+function formatarDuracao(segundos) {
+  if (segundos == null || !isFinite(segundos) || segundos < 0) return null;
+  if (segundos < 60) return 'menos de 1 min';
+  const min = Math.round(segundos / 60);
+  if (min < 60) return `~${min} min`;
+  return `~${Math.floor(min / 60)} h ${min % 60} min`;
+}
+
+/** Suavizacao exponencial: o valor novo pesa `alfa`, o historico pesa o resto. */
+function suavizar(anterior, atual, alfa = 0.3) {
+  return anterior == null ? atual : anterior * (1 - alfa) + atual * alfa;
+}
+
 // ---------------------------------------------------------------- API
 
 async function api(caminho, opcoes = {}) {
@@ -208,6 +230,37 @@ async function analisar(reanalisar) {
   fila.replaceChildren();
   const cartoes = {};
 
+  // Estimativa de tempo: relogio de parede + fracao reportada, sem apoio do backend.
+  const eta = { ativo: null, info: null, prog: {}, concluidos: [], suave: null, linha: null };
+  const relogio = { id: null };
+
+  function renderETA() {
+    const a = eta.ativo ? eta.prog[eta.ativo] : null;
+    if (a && a.el) {
+      const decorrido = Date.now() - a.t0;
+      const pronto = decorrido >= 10000 && a.fracao >= 0.08;
+      if (pronto) a.suave = suavizar(a.suave, estimarRestante(decorrido, a.fracao));
+      a.el.textContent = pronto ? `${formatarDuracao(a.suave)} restantes` : 'estimando o tempo…';
+    }
+    if (eta.linha && eta.info) {
+      const { posicao, total } = eta.info;
+      const decorrido = a ? Date.now() - a.t0 : 0;
+      const restanteAtual = a ? estimarRestante(decorrido, a.fracao) : null;
+      const media = eta.concluidos.length
+        ? eta.concluidos.reduce((s, x) => s + x, 0) / eta.concluidos.length
+        : (a && a.fracao >= 0.08 && decorrido >= 10000 ? decorrido / 1000 / a.fracao : null);
+      const depois = total - posicao;  // artigos ainda nao iniciados
+      let cauda = 'estimando o tempo…';
+      if (restanteAtual != null || media != null) {
+        const seg = (restanteAtual ?? media ?? 0) + (media ?? 0) * depois;
+        eta.suave = suavizar(eta.suave, seg);
+        const n = depois + 1;
+        cauda = `${formatarDuracao(eta.suave)} restantes · ${n} artigo${n > 1 ? 's' : ''}`;
+      }
+      eta.linha.textContent = `Lote: ${cauda}`;
+    }
+  }
+
   const corpo = {
     ...conexao(),
     keywords: $('#keywords').value,
@@ -223,8 +276,15 @@ async function analisar(reanalisar) {
       fila.append(elemento('div', { class: 'erro-bloco', texto: evento.mensagem }));
       return;
     }
+    if (evento.tipo === 'inicio') {
+      eta.linha = elemento('p', { class: 'fila-eta lote', texto: 'Lote: estimando o tempo…' });
+      fila.append(eta.linha);
+      relogio.id = setInterval(renderETA, 5000);
+      return;
+    }
     if (evento.tipo === 'artigo_inicio') {
       const etapa = elemento('p', { class: 'fila-etapa', texto: 'preparando…' });
+      const etaItem = elemento('p', { class: 'fila-eta', texto: 'estimando o tempo…' });
       const preenchida = elemento('div', { class: 'barra-preenchida', style: 'width:0' });
       const cartao = elemento('div', { class: 'fila-item' }, [
         elemento('div', { class: 'fila-topo' }, [
@@ -232,16 +292,30 @@ async function analisar(reanalisar) {
           elemento('span', { class: 'sutil', texto: `${evento.posicao}/${evento.total}` }),
         ]),
         etapa,
+        etaItem,
         elemento('div', { class: 'barra-trilho' }, [preenchida]),
       ]);
       cartoes[evento.id] = { cartao, etapa, preenchida };
       fila.append(cartao);
+      eta.ativo = evento.id;
+      eta.info = { posicao: evento.posicao, total: evento.total };
+      eta.prog[evento.id] = { t0: Date.now(), fracao: 0, suave: null, el: etaItem };
       return;
     }
     const alvo = cartoes[evento.id];
     if (evento.tipo === 'progresso' && alvo) {
       alvo.etapa.textContent = evento.etapa;
       alvo.preenchida.style.width = `${Math.round(evento.fracao * 100)}%`;
+      if (eta.prog[evento.id]) eta.prog[evento.id].fracao = evento.fracao;
+      renderETA();
+    }
+    if (evento.tipo === 'artigo_fim' || evento.tipo === 'artigo_erro') {
+      const p = eta.prog[evento.id];
+      if (p) {
+        eta.concluidos.push((Date.now() - p.t0) / 1000);
+        if (p.el) p.el.classList.add('oculto');
+      }
+      if (eta.ativo === evento.id) eta.ativo = null;
     }
     if (evento.tipo === 'artigo_fim') {
       estado.detalhes[evento.id] = evento.dados;
@@ -272,6 +346,8 @@ async function analisar(reanalisar) {
       alvo.etapa.textContent = `falhou: ${evento.mensagem}`;
     }
     if (evento.tipo === 'fim') {
+      clearInterval(relogio.id);
+      eta.linha?.remove();
       const minutos = ((evento.segundos || 0) / 60).toFixed(1);
       fila.append(elemento('p', {
         class: 'sutil',
@@ -285,6 +361,7 @@ async function analisar(reanalisar) {
   } catch (erro) {
     fila.append(elemento('div', { class: 'erro-bloco', texto: `Falha na análise: ${erro.message}` }));
   } finally {
+    clearInterval(relogio.id);
     estado.analisando = false;
     await carregarLote();
   }

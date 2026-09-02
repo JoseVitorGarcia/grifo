@@ -362,6 +362,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .fila-topo { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
 .fila-topo b { font-size: 14px; }
 .fila-etapa { font-family: var(--fonte-mono); font-size: 12px; color: var(--texto-sutil); margin: 6px 0 8px; min-height: 1.2em; }
+.fila-eta { font-size: 12px; color: var(--texto-sutil); margin: 0 0 8px; min-height: 1.2em; font-variant-numeric: tabular-nums; }
+.fila-eta.lote { margin-bottom: 12px; font-weight: 600; color: var(--texto); }
 .fila-item.ok { border-color: color-mix(in srgb, var(--ok) 45%, var(--borda)); }
 .fila-item.falhou { border-color: var(--erro); }
 
